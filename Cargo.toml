@@ -1,0 +1,8 @@
+[package]
+name = "zbot"
+version = "0.1.0"
+authors = ["zxv <zxv@tfwno.gf>"]
+build = "build.rs"
+
+[dependencies]
+serenity = "*"
