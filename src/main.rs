@@ -1,50 +1,13 @@
 #[macro_use] extern crate serenity;
 
-use serenity::client::Client;
-use serenity::prelude::{EventHandler, Context};
-use serenity::framework::standard::StandardFramework;
-use serenity::model::gateway::Ready;
-use std::env;
+mod discord;
 
-struct Handler;
-
-impl EventHandler for Handler {
-    fn ready(&self, ctx: Context, _: Ready) {
-        ctx.set_game_name("Dev. Hell");
-        ctx.idle();
-    }
-}
+use std::thread;
 
 fn main() {
-    // Login with a bot token from the environment
-    let mut client = Client::new(&env::var("DISCORD_TOKEN").expect("token"), Handler)
-        .expect("Error creating client");
-    client.with_framework(StandardFramework::new()
-        .configure(|c| c.prefix("!")) // set the bot's prefix to "~"
-        .cmd("hello", hello)
-        .cmd("kill", kill)
-        .cmd("version", version));
-
-    // start listening for events by starting a single shard
-    if let Err(why) = client.start() {
-        println!("An error occurred while running the client: {:?}", why);
-    }
+    let discord_child = thread::spawn(move || { discord::init(); });
+    // let twitch_child = thread::spawn(move || { twitch::init(); });
+    let discord_res = discord_child.join();
+    // let twitch_res = twitch.join();
+    println!("Discord exited.");
 }
-
-command!(hello(_context, message) {
-    let _ = message.reply("Pong!");
-    // println!("CONTEXT");
-    // println!("{:#?}", _context);
-    // println!("");
-    println!("MESSAGE");
-    println!("{:#?}", message);
-});
-
-command!(kill(context, _message) {
-    context.quit();
-    std::process::exit(0);
-});
-
-command!(version(_context, message) {
-    let _ = message.reply(&format!("{}", env!("GIT_VERSION")));
-});
