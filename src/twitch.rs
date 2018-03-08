@@ -1,5 +1,3 @@
-extern crate irc;
-
 // use std::time::{Duration, Instant};
 use std::default::Default;
 use irc::client::prelude::*;
@@ -24,7 +22,7 @@ use irc::error::Error;
 //     }
 // }
 
-fn main() {
+pub fn init() {
     // Set up config
     let bot_name = "zedexv";
     let bot_pass = "oauth:uxp0fl69kng0mngyquhialj37fqgqm";
