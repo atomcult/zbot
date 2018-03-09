@@ -26,16 +26,16 @@ pub fn init() {
     // Set up config
     let bot_name = "zedexv";
     let bot_pass = "oauth:uxp0fl69kng0mngyquhialj37fqgqm";
-    let chans = vec![format!("#zedexv"), format!("#pqplays")];
+    let chans = vec![String::from("#zedexv"), String::from("#pqplays")];
 
     // TODO: Set up command array
 
     // Set up IRC connection
     let cfg = Config {
-        owners: Some(vec![format!("zedexv")]),
+        owners: Some(vec![String::from("zedexv")]),
         nickname: Some(bot_name.to_string()),
         password: Some(bot_pass.to_string()),
-        server: Some(format!("irc.twitch.tv")),
+        server: Some(String::from("irc.twitch.tv")),
         port: Some(6667),
         use_ssl: Some(false),
         channels: Some(chans),
@@ -55,12 +55,8 @@ pub fn init() {
     // Main command processing loop
     s.for_each_incoming(|msg| {
         println!("{}", msg.to_string());
-        let Message {
-            tags: tags,
-            prefix: _,
-            command: cmd,
-        } = msg;
-        match cmd {
+        let Message { command, .. } = msg;
+        match command {
             Command::PING(server, None) => s.send(format!("PONG {}", server).as_str()).unwrap(),
             Command::PRIVMSG(chan, cmd) => {
                 if cmd == "!pyramid" {

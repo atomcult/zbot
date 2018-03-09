@@ -8,8 +8,8 @@ use std::thread;
 
 fn main() {
     // Spawn threads
-    let discord = thread::spawn(move || discord::init() );
-    let twitch  = thread::spawn(move || twitch::init() );
+    let discord = thread::spawn(discord::init);
+    let twitch  = thread::spawn(twitch::init);
 
     // Join child processes to parent
     let _ = discord.join();
