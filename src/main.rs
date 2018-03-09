@@ -7,11 +7,11 @@ mod twitch;
 use std::thread;
 
 fn main() {
-    let discord_child = thread::spawn(move || { discord::init(); });
-    let twitch_child = thread::spawn(move || { twitch::init(); });
+    // Spawn threads
+    let discord = thread::spawn(move || discord::init() );
+    let twitch  = thread::spawn(move || twitch::init() );
 
-    let discord_res = discord_child.join();
-    let twitch_res = twitch_child.join();
-
-    println!("Discord exited.");
+    // Join child processes to parent
+    let _ = discord.join();
+    let _ = twitch.join();
 }
