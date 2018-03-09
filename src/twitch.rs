@@ -2,7 +2,7 @@
 use std::default::Default;
 use irc::client::prelude::*;
 // use irc::client::data::user::User;
-use irc::error::Error;
+use irc::error::IrcError;
 
 // struct BotCommand {
 //     name: String,
@@ -41,7 +41,7 @@ pub fn init() {
         channels: Some(chans),
         ..Default::default()
     };
-    let s = IrcServer::from_config(cfg).unwrap();
+    let s = IrcClient::from_config(cfg).unwrap();
     let s = match s.identify() {
         Ok(_) => s,
         Err(e) => panic!("Unable to identify to server: {}", e),
@@ -80,7 +80,7 @@ pub fn init() {
     }).unwrap();
 }
 
-fn chanmsg(s: &IrcServer, chan: &str, msg: &str) -> Result<(), Error> {
+fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
     println!("SENDING >>> PRIVMSG {un} :{}\n", msg, un = chan);
     s.send(format!("PRIVMSG {un} :{}  ", msg, un = chan).as_str())
 }

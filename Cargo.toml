@@ -5,5 +5,5 @@ authors = ["zxv <zxv@tfwno.gf>"]
 build = "build.rs"
 
 [dependencies]
-irc      = "0.12.3"
+irc      = "0.13"
 serenity = "0.5.1"
