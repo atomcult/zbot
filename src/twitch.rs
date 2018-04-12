@@ -35,9 +35,9 @@ pub fn init() {
         owners: Some(vec![String::from("zedexv")]),
         nickname: Some(bot_name.to_string()),
         password: Some(bot_pass.to_string()),
-        server: Some(String::from("irc.twitch.tv")),
-        port: Some(6667),
-        use_ssl: Some(false),
+        server: Some(format!("irc.chat.twitch.tv")),
+        port: Some(443),
+        use_ssl: Some(true),
         channels: Some(chans),
         ..Default::default()
     };
