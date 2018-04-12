@@ -48,9 +48,9 @@ pub fn init() {
     };
 
     // Set up extra twitch irc capabilities
-    s.send("CAP REQ :twitch.tv/membership  ").unwrap();
-    s.send("CAP REQ :twitch.tv/tags  ").unwrap();
-    s.send("CAP REQ :twitch.tv/commands  ").unwrap();
+    s.send("CAP REQ :twitch.tv/membership").unwrap();
+    s.send("CAP REQ :twitch.tv/tags").unwrap();
+    s.send("CAP REQ :twitch.tv/commands").unwrap();
 
     // Main command processing loop
     s.for_each_incoming(|msg| {
@@ -78,5 +78,5 @@ pub fn init() {
 
 fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
     println!("SENDING >>> PRIVMSG {un} :{}\n", msg, un = chan);
-    s.send(format!("PRIVMSG {un} :{}  ", msg, un = chan).as_str())
+    s.send(format!("PRIVMSG {un} :{}", msg, un = chan).as_str())
 }
