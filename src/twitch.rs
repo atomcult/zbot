@@ -3,6 +3,7 @@ use std::default::Default;
 use irc::client::prelude::*;
 // use irc::client::data::user::User;
 use irc::error::IrcError;
+use config::Twitch;
 
 // struct BotCommand {
 //     name: String,
@@ -22,23 +23,19 @@ use irc::error::IrcError;
 //     }
 // }
 
-pub fn init() {
-    // Set up config
-    let bot_name = "zedexv";
-    let bot_pass = "oauth:uxp0fl69kng0mngyquhialj37fqgqm";
-    let chans = vec![String::from("#zedexv"), String::from("#pqplays")];
+pub fn init(cfg: Twitch) {
 
     // TODO: Set up command array
 
     // Set up IRC connection
     let cfg = Config {
-        owners: Some(vec![String::from("zedexv")]),
-        nickname: Some(bot_name.to_string()),
-        password: Some(bot_pass.to_string()),
-        server: Some(format!("irc.chat.twitch.tv")),
+        owners: Some(cfg.owners),
+        nickname: Some(cfg.user),
+        password: Some(cfg.pass),
+        server: Some(String::from("irc.chat.twitch.tv")),
         port: Some(443),
         use_ssl: Some(true),
-        channels: Some(chans),
+        channels: Some(cfg.channels),
         ..Default::default()
     };
     let s = IrcClient::from_config(cfg).unwrap();

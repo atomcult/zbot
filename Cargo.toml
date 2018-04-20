@@ -1,9 +1,12 @@
 [package]
-name = "zbot"
+name    = "zbot"
 version = "0.1.0"
 authors = ["zxv <zxv@tfwno.gf>"]
-build = "build.rs"
+build   = "build.rs"
 
 [dependencies]
-irc      = "0.13"
-serenity = "0.5.1"
+irc          = "0.13"
+serenity     = "0.5.1"
+toml         = "0.4"
+serde        = "*"
+serde_derive = "*"
