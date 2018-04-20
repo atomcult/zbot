@@ -1,7 +1,7 @@
 [twitch]
 user = "bot_user_name"
 pass = "oauth:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-owner = ["my_user_name"]
+owners = ["my_user_name"]
 channels = ["my_user_name", "friend_user_name"]
 
 [discord]
