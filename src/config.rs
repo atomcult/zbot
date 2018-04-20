@@ -10,7 +10,7 @@ pub struct Config {
 
 impl Config {
     pub fn open() -> Config {
-        let mut file = File::open("config").unwrap();
+        let mut file = File::open("config.toml").unwrap();
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
         toml::from_str(&contents).unwrap()
