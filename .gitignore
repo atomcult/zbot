@@ -2,6 +2,9 @@
 /target
 **/*.rs.bk
 
+# Program data
+config.toml
+
 # Vim
 rusty-tags.vi
 *.vim
