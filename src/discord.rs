@@ -8,7 +8,7 @@ struct Handler;
 
 impl EventHandler for Handler {
     fn ready(&self, ctx: Context, _: Ready) {
-        ctx.set_game_name("Dev. Hell");
+        ctx.set_game_name("R&D");
         ctx.idle();
     }
 }
