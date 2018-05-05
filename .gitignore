@@ -4,6 +4,7 @@
 
 # Program data
 config.toml
+twitch.log
 
 # Vim
 rusty-tags.vi

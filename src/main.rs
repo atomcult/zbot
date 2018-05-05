@@ -1,3 +1,4 @@
+#![feature(assoc_unix_epoch)]
 extern crate irc;
 #[macro_use] extern crate serenity;
 extern crate toml;
