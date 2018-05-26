@@ -5,6 +5,7 @@ extern crate toml;
 #[macro_use] extern crate serde_derive;
 
 mod config;
+mod cmd;
 mod discord;
 mod twitch;
 
