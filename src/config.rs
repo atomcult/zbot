@@ -6,7 +6,6 @@ use toml;
 #[derive(Deserialize, Debug)]
 pub struct Config {
     pub twitch: Option<Twitch>,
-    pub discord: Option<Discord>,
 }
 
 impl Config {
@@ -35,9 +34,4 @@ pub struct Twitch {
     pub pass: String,
     pub owners: Vec<String>,
     pub channels: Vec<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Discord {
-    pub token: String,
 }
