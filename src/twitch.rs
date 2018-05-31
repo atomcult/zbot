@@ -4,8 +4,9 @@ use std::default::Default;
 use irc::client::prelude::*;
 use irc::error::IrcError;
 use config::Channel;
+use cmd;
 
-pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan: Channel) {
+pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: Channel) {
 
     // Set up IRC connection
     let cfg = Config {
@@ -15,7 +16,7 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan: Chann
         server: Some(String::from("irc.chat.twitch.tv")),
         port: Some(443),
         use_ssl: Some(true),
-        channels: Some(vec!(format!("#{}", chan.name.clone()))),
+        channels: Some(vec!(format!("#{}", chan_cfg.name.clone()))),
         ..Default::default()
     };
     let s = IrcClient::from_config(cfg).unwrap();
@@ -39,6 +40,8 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan: Chann
         Err(e) => panic!("Error: {}", e),
     };
 
+    // Create command buffer
+    let mut cmd_buffer = cmd::CmdList::new();
 
     // Main command processing loop
     s.for_each_incoming(|msg| {
@@ -51,17 +54,14 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan: Chann
         let Message { command, .. } = msg;
         match command {
             Command::PING(server, None) => s.send(format!("PONG {}", server).as_str()).unwrap(),
-            Command::PRIVMSG(chan, cmd) => {
-                if cmd == "!pyramid" {
-                    chanmsg(&s, &chan, "ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "CenaWins ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "ffYeah! CenaWins ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "CenaWins ffYeah! CenaWins ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "ffYeah! CenaWins ffYeah! CenaWins ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "CenaWins ffYeah! CenaWins ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "ffYeah! CenaWins ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "CenaWins ffYeah!").unwrap();
-                    chanmsg(&s, &chan, "ffYeah!").unwrap();
+            Command::PRIVMSG(chan, mut cmd) => {
+                if cmd.remove(0) == chan_cfg.cmd_prefix {
+                    let msg_list = cmd_buffer.exec(&cmd);
+                    if let Some(msgv) = msg_list {
+                        for msg in &msgv {
+                            chanmsg(&s, &chan, msg).unwrap();
+                        }
+                    }
                 }
             }
             _ => {}

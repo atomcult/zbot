@@ -32,7 +32,18 @@ impl Config {
     }
 }
 
+#[serde(default)]
 #[derive(Clone, Deserialize, Debug)]
 pub struct Channel {
     pub name: String,
+    pub cmd_prefix: char,
+}
+
+impl Default for Channel {
+    fn default() -> Self {
+        Self {
+            name: String::from(""),
+            cmd_prefix: '!',
+        }
+    }
 }

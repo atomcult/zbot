@@ -12,6 +12,8 @@ mod twitch;
 use std::thread;
 
 fn main() {
+    // TODO: Add cli parsing
+    // TODO: Changeable config dir
     let cfg = config::Config::open();
 
     let mut threads = Vec::new();

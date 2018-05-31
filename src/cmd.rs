@@ -3,33 +3,28 @@ use std::collections::{HashMap, LinkedList};
 use auth::Auth;
 
 
-pub struct Bucket {
-    pub count: u32,
-    pub interval: Duration,
-}
-
 pub struct CmdList {
     commands: HashMap<&'static str, Cmd>,
     aliases: HashMap<String, String>,
-    log: LinkedList<(String, Instant)>
+    send_buffer: LinkedList<(String, Instant)>
 }
 
 impl CmdList {
     pub fn new() -> Self {
         let mut commands = HashMap::new();
         let aliases = HashMap::new();
-        let log = LinkedList::new();
+        let send_buffer = LinkedList::new();
 
         commands.insert("say", say());
 
         Self {
             commands,
             aliases,
-            log,
+            send_buffer,
         }
     }
 
-    pub fn exec(mut self, command: &str) -> Option<Vec<String>> {
+    pub fn exec(&mut self, command: &str) -> Option<Vec<String>> {
         let (cmd, args) = pop_cmd(command.to_string());
         if cmd == "alias" {
             if let Some(args) = args {
@@ -41,13 +36,18 @@ impl CmdList {
                     }
                     self.aliases.insert(alias, command);
                     return None
+                } else {
+                    return match self.aliases.remove(&alias) {
+                        Some(_) => None,
+                        None => Some(vec!(format!("Alias `{}` could not be removed.", alias))),
+                    }
                 }
             } else {
                 return Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")))
             }
         } else {
             // Search for command and exec
-            if let Some(c) = self.commands.get(cmd.as_str()) {
+            if let Some(c) = self.commands.get(&cmd.as_str()) {
                 return c.exec(args)
             }
             // Else search for alias and exec
@@ -74,6 +74,17 @@ impl Cmd {
     }
 }
 
+pub struct Bucket {
+    pub count: u32,
+    pub interval: Duration,
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                          Bot Commands                                          //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 fn say() -> Cmd {
     Cmd {
         func: |args| {
@@ -85,6 +96,11 @@ fn say() -> Cmd {
         auth: Auth::Owner,
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                        Helper Functions                                        //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 fn pop_cmd(s: String) -> (String, Option<String>) {
     let s = String::from(s.trim_left());
