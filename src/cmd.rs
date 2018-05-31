@@ -1,13 +1,7 @@
 use std::time::{Duration, Instant};
 use std::collections::{HashMap, LinkedList};
+use auth::Auth;
 
-pub enum Auth {
-    Owner,
-    Streamer,
-    Mod,
-    Subscriber,
-    Viewer
-}
 
 pub struct Bucket {
     pub count: u32,
@@ -15,15 +9,15 @@ pub struct Bucket {
 }
 
 pub struct CmdList {
-    commands: HashMap<String, Cmd>,
-    aliases: HashMap<String, (String, String)>,
+    commands: HashMap<&'static str, Cmd>,
+    aliases: HashMap<String, String>,
     log: LinkedList<(String, Instant)>
 }
 
 impl CmdList {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let mut commands = HashMap::new();
-        let mut aliases = HashMap::new();
+        let aliases = HashMap::new();
         let log = LinkedList::new();
 
         commands.insert("say", say());
@@ -35,46 +29,72 @@ impl CmdList {
         }
     }
 
-    fn exec(mut self, cmd: &str, args: &str) {
+    pub fn exec(mut self, command: &str) -> Option<String> {
+        let (cmd, args) = pop_cmd(command.to_string());
         if cmd == "alias" {
-            // FIXME: Assumes args will be split into 3 arguments (no error handling)
-            let args = args.to_string();
-            let argv: Vec<&str> = args.splitn(3, " ").collect();
-            self.aliases.insert(argv[0].to_string(), (argv[1].to_string(), argv[2].to_string()));
+            if let Some(args) = args {
+                let (alias, command) = pop_cmd(args);
+                if let Some(command) = command {
+                    // If alias is the same as a command name, do not add the alias
+                    if let Some(_) = self.commands.get(alias.as_str()) {
+                        return Some(format!("Cannot alias `{}`. Command with the same name exists already.", alias))
+                    }
+                    self.aliases.insert(alias, command);
+                    return None
+                }
+            } else {
+                return Some(String::from("Usage: !alias <alias> <cmd> [args...]"))
+            }
         } else {
             // Search for command and exec
-            if let Some(c) = self.commands.get(cmd) {
+            if let Some(c) = self.commands.get(cmd.as_str()) {
                 c.exec(args);
-                return
+                return None
             }
             // Else search for alias and exec
-            if let Some((c, args)) = self.aliases.get(cmd) {
-                if let Some(c) = self.commands.get(c) {
+            if let Some(alias_cmd) = self.aliases.get(&cmd) {
+                let (c, args) = pop_cmd(alias_cmd.clone());
+                if let Some(c) = self.commands.get(c.as_str()) {
                     c.exec(args);
                 }
+                return None
             }
         }
+        None
     }
 }
 
 pub struct Cmd {
-    func: fn(&str),
+    func: fn(Option<String>) -> Option<String>,
     pub bucket: Option<Bucket>,
     pub auth: Auth,
 }
 
 impl Cmd {
-    pub fn exec(&self, args: &str) {
-        (self.func)(args);
+    pub fn exec(&self, args: Option<String>) -> Option<String> {
+        (self.func)(args)
     }
 }
 
-pub fn say() -> Cmd {
+fn say() -> Cmd {
     Cmd {
         func: |args| {
-            println!("{}", args);
+            if let Some(args) = args {
+                Some(args)
+            } else { None }
         },
         bucket: None,
         auth: Auth::Owner,
+    }
+}
+
+fn pop_cmd(s: String) -> (String, Option<String>) {
+    let s = String::from(s.trim_left());
+    let argv: Vec<&str> = s.splitn(2, " ").collect();
+
+    if argv.len() == 2 {
+        (argv[0].to_string(), Some(argv[1].trim().to_string()))
+    } else {
+        (argv[0].to_string(), None)
     }
 }

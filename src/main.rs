@@ -1,9 +1,10 @@
 #![feature(assoc_unix_epoch)]
+
 extern crate irc;
-#[macro_use] extern crate serenity;
 extern crate toml;
 #[macro_use] extern crate serde_derive;
 
+mod auth;
 mod config;
 mod cmd;
 mod twitch;
@@ -13,16 +14,21 @@ use std::thread;
 fn main() {
     let cfg = config::Config::open();
 
-    // Initialize thread handles
-    let mut twitch = None;
-
-    // Spawn twitch thread
-    if let Some(cfg) = cfg.twitch {
-        twitch = Some(
-            thread::spawn(|| twitch::init(cfg))
-            );
+    let mut threads = Vec::new();
+    for (_, channel) in &cfg.channels {
+        // Create local copies of variables
+        let user = cfg.user.clone();
+        let pass = cfg.pass.clone();
+        let owners = cfg.owners.clone();
+        let channel = channel.clone();
+        
+        // Spawn thread
+        threads.push(thread::spawn(|| {
+            twitch::init( user, pass, owners, channel);
+        }));
     }
 
-    // Join threads
-    if let Some(handle) = twitch  { handle.join().unwrap(); }
+    for t in threads {
+        t.join().unwrap_or_else(|_|());
+    }
 }

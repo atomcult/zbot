@@ -1,11 +1,15 @@
 use std::{env,process};
 use std::fs::File;
+use std::collections::HashMap;
 use std::io::prelude::*;
 use toml;
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct Config {
-    pub twitch: Option<Twitch>,
+    pub user: String,
+    pub pass: String,
+    pub owners: Vec<String>,
+    pub channels: HashMap<String, Channel>,
 }
 
 impl Config {
@@ -28,10 +32,7 @@ impl Config {
     }
 }
 
-#[derive(Deserialize, Debug)]
-pub struct Twitch {
-    pub user: String,
-    pub pass: String,
-    pub owners: Vec<String>,
-    pub channels: Vec<String>,
+#[derive(Clone, Deserialize, Debug)]
+pub struct Channel {
+    pub name: String,
 }

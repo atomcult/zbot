@@ -5,7 +5,7 @@ use std::default::Default;
 use irc::client::prelude::*;
 // use irc::client::data::user::User;
 use irc::error::IrcError;
-use config::Twitch;
+use config::Channel;
 
 // struct BotCommand {
 //     name: String,
@@ -25,19 +25,19 @@ use config::Twitch;
 //     }
 // }
 
-pub fn init(cfg: Twitch) {
+pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan: Channel) {
 
     // TODO: Set up command array
 
     // Set up IRC connection
     let cfg = Config {
-        owners: Some(cfg.owners),
-        nickname: Some(cfg.user),
-        password: Some(cfg.pass),
+        owners: Some(owners.clone()),
+        nickname: Some(bot_user),
+        password: Some(bot_pass),
         server: Some(String::from("irc.chat.twitch.tv")),
         port: Some(443),
         use_ssl: Some(true),
-        channels: Some(cfg.channels),
+        channels: Some(vec!(format!("#{}", chan.name.clone()))),
         ..Default::default()
     };
     let s = IrcClient::from_config(cfg).unwrap();
