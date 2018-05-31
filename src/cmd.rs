@@ -83,7 +83,9 @@ impl CmdList {
                     } else { break; }
                 }
             }
-            if purge_count > 0 {
+            if purge_count == 100 {
+                cons.skip_pending().unwrap();
+            } else if purge_count > 0 {
                 cons.skip(purge_count).unwrap();
             }
 
