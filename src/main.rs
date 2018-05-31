@@ -3,6 +3,7 @@
 extern crate irc;
 extern crate toml;
 #[macro_use] extern crate serde_derive;
+extern crate rb;
 
 mod auth;
 mod config;
@@ -26,7 +27,7 @@ fn main() {
         
         // Spawn thread
         threads.push(thread::spawn(|| {
-            twitch::init( user, pass, owners, channel);
+            twitch::init(user, pass, owners, channel);
         }));
     }
 

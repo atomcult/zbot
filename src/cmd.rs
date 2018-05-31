@@ -1,21 +1,24 @@
 use std::time::{Duration, Instant};
-use std::collections::{HashMap, LinkedList};
+use std::collections::HashMap;
+use rb::*;
+
 use auth::Auth;
 
 
 pub struct CmdList {
     commands: HashMap<&'static str, Cmd>,
     aliases: HashMap<String, String>,
-    send_buffer: LinkedList<(String, Instant)>
+    send_buffer: SpscRb<Option<Instant>>
 }
 
 impl CmdList {
     pub fn new() -> Self {
         let mut commands = HashMap::new();
         let aliases = HashMap::new();
-        let send_buffer = LinkedList::new();
+        let send_buffer = SpscRb::new(100);
 
         commands.insert("say", say());
+        commands.insert("count", count());
 
         Self {
             commands,
@@ -32,34 +35,69 @@ impl CmdList {
                 if let Some(command) = command {
                     // If alias is the same as a command name, do not add the alias
                     if let Some(_) = self.commands.get(alias.as_str()) {
-                        return Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)))
+                        let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
+                            return self.log_msg(msgv);
                     }
                     self.aliases.insert(alias, command);
                     return None
                 } else {
-                    return match self.aliases.remove(&alias) {
+                    let msgv = match self.aliases.remove(&alias) {
                         Some(_) => None,
                         None => Some(vec!(format!("Alias `{}` could not be removed.", alias))),
-                    }
+                    };
+                    return self.log_msg(msgv);
                 }
             } else {
-                return Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")))
+                let msgv = Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")));
+                return self.log_msg(msgv);
             }
         } else {
+            let mut msgv = None;
             // Search for command and exec
             if let Some(c) = self.commands.get(&cmd.as_str()) {
-                return c.exec(args)
+                msgv = c.exec(args);
             }
             // Else search for alias and exec
-            if let Some(alias_cmd) = self.aliases.get(&cmd) {
+            else if let Some(alias_cmd) = self.aliases.get(&cmd) {
                 let (c, args) = pop_cmd(alias_cmd.clone());
                 if let Some(c) = self.commands.get(c.as_str()) {
-                    return c.exec(args)
+                    msgv = c.exec(args);
                 }
             }
+            return self.log_msg(msgv);
         }
-        None
     }
+
+    fn log_msg(&mut self, msgv: Option<Vec<String>>) -> Option<Vec<String>> {
+        if let Some(msgv) = msgv {
+            let (prod, cons) = (self.send_buffer.producer(), self.send_buffer.consumer());
+
+            let mut purge_count = 0;
+            let mut buffer = [None;100];
+            if let Ok(_) = cons.get(&mut buffer) {
+                for inst in buffer.into_iter() {
+                    if let Some(inst) = inst {
+                        if inst.elapsed().as_secs() >= 30 {
+                            purge_count += 1;
+                        } else { break; }
+                    } else { break; }
+                }
+            }
+            if purge_count > 0 {
+                cons.skip(purge_count).unwrap();
+            }
+
+            if self.send_buffer.slots_free() >= msgv.len() {
+                let mut instv = Vec::new();
+                for _ in &msgv {
+                    instv.push(Some(Instant::now()));
+                }
+                prod.write(&instv).unwrap();
+                Some(msgv)
+            } else { None }
+        } else { None }
+    }
+
 }
 
 pub struct Cmd {
@@ -84,7 +122,6 @@ pub struct Bucket {
 //                                          Bot Commands                                          //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 fn say() -> Cmd {
     Cmd {
         func: |args| {
@@ -96,6 +133,28 @@ fn say() -> Cmd {
         auth: Auth::Owner,
     }
 }
+
+fn count() -> Cmd {
+    Cmd {
+        func: |args| {
+            if let Some(args) = args {
+                match args.parse::<u32>() {
+                    Ok(u) => {
+                        let mut v = Vec::new();
+                        for i in 0..u {
+                            v.push(format!("{}", i));
+                        }
+                        Some(v)
+                    },
+                    Err(_) => None,
+                }
+            } else { None }
+        },
+        bucket: None,
+        auth: Auth::Owner,
+    }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                        Helper Functions                                        //

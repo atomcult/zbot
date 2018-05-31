@@ -3,6 +3,7 @@ use std::io::Write;
 use std::default::Default;
 use irc::client::prelude::*;
 use irc::error::IrcError;
+
 use config::Channel;
 use cmd;
 
