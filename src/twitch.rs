@@ -19,7 +19,7 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
         server: Some(String::from("irc.chat.twitch.tv")),
         port: Some(443),
         use_ssl: Some(true),
-        channels: Some(vec!(format!("#{}", chan_cfg.name.clone()))),
+        channels: Some(vec!(format!("#{}", chan_cfg.name.to_lowercase()))),
         ..Default::default()
     };
     let s = IrcClient::from_config(cfg).unwrap();
