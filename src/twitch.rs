@@ -1,33 +1,11 @@
-// use std::time::{Duration, Instant};
 use std;
 use std::io::Write;
 use std::default::Default;
 use irc::client::prelude::*;
-// use irc::client::data::user::User;
 use irc::error::IrcError;
 use config::Channel;
 
-// struct BotCommand {
-//     name: String,
-//     timeout: Duration,
-//     last_used: Option<Instant>,
-//     function: fn(msg: &str),
-// }
-
-// impl BotCommand {
-//     fn new(name: String, timeout: Duration, function: fn(msg: &str)) -> Self {
-//         BotCommand {
-//             name: name,
-//             timeout: timeout,
-//             last_used: None,
-//             function: function,
-//         }
-//     }
-// }
-
 pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan: Channel) {
-
-    // TODO: Set up command array
 
     // Set up IRC connection
     let cfg = Config {
