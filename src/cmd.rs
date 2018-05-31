@@ -19,6 +19,7 @@ impl CmdList {
 
         commands.insert("say", say());
         commands.insert("count", count());
+        commands.insert("version", version());
 
         Self {
             commands,
@@ -153,6 +154,17 @@ fn count() -> Cmd {
                     Err(_) => None,
                 }
             } else { None }
+        },
+        bucket: None,
+        auth: Auth::Owner,
+    }
+}
+
+fn version() -> Cmd {
+    Cmd {
+        func: |_| {
+            let v = env!("GIT_VERSION");
+            Some(vec!(String::from(v)))
         },
         bucket: None,
         auth: Auth::Owner,
