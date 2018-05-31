@@ -56,7 +56,7 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
         // Parse
         let Message { command, tags, prefix } = msg;
         match command {
-            Command::PING(server, None) => s.send(format!("PONG {}", server).as_str()).unwrap(),
+            Command::PING(server, None) => s.send("PONG :tmi.twitch.tv").unwrap(),
             Command::PRIVMSG(chan, mut cmd) => {
                 if cmd.remove(0) == chan_cfg.cmd_prefix {
                     let auth = eval_auth(tags, prefix, &owners);
