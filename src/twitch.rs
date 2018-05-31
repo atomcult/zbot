@@ -3,7 +3,9 @@ use std::io::Write;
 use std::default::Default;
 use irc::client::prelude::*;
 use irc::error::IrcError;
+use irc::proto::message::Tag;
 
+use auth::Auth;
 use config::Channel;
 use cmd;
 
@@ -52,12 +54,13 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
         let _ = log.write_all(log_msg.as_bytes());
 
         // Parse
-        let Message { command, .. } = msg;
+        let Message { command, tags, prefix } = msg;
         match command {
             Command::PING(server, None) => s.send(format!("PONG {}", server).as_str()).unwrap(),
             Command::PRIVMSG(chan, mut cmd) => {
                 if cmd.remove(0) == chan_cfg.cmd_prefix {
-                    let msg_list = cmd_buffer.exec(&cmd);
+                    let auth = eval_auth(tags, prefix, &owners);
+                    let msg_list = cmd_buffer.exec(auth, &cmd);
                     if let Some(msgv) = msg_list {
                         for msg in &msgv {
                             chanmsg(&s, &chan, msg).unwrap();
@@ -75,11 +78,39 @@ fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
     s.send(format!("PRIVMSG {un} :{}", msg, un = chan).as_str())
 }
 
-fn log_format (s: String) -> String {
+fn log_format(s: String) -> String {
     use std::time::SystemTime;
     if let Ok(time) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
         format!("[{}] {}", time.as_secs(), s)
     } else {
         format!("[ERR] {}", s)
     }
+}
+
+fn eval_auth(tags: Option<Vec<Tag>>, prefix: Option<String>, owners: &[String]) -> Auth {
+    if let Some(prefix) = prefix {
+        let prefix: Vec<&str> = prefix.split('!').collect();
+        let from_user = prefix[0];
+        if let Some(tags) = tags {
+            // Check if user is an owner
+            for owner in owners.into_iter() { if from_user == owner.as_str() { return Auth::Owner } }
+
+            // Otherwise get their auth from tags
+            for Tag(key, val) in tags {
+                if key == "badges" {
+                    if let Some(val) = val {
+                        if val.contains("broadcaster") {
+                            return Auth::Streamer;
+                        } else if val.contains("moderator") {
+                            return Auth::Mod;
+                        } else if val.contains("subscriber") {
+                            return Auth::Subscriber;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    Auth::Viewer
 }

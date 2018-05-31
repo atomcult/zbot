@@ -27,41 +27,43 @@ impl CmdList {
         }
     }
 
-    pub fn exec(&mut self, command: &str) -> Option<Vec<String>> {
+    pub fn exec(&mut self, auth: Auth, command: &str) -> Option<Vec<String>> {
         let (cmd, args) = pop_cmd(command.to_string());
         if cmd == "alias" {
-            if let Some(args) = args {
-                let (alias, command) = pop_cmd(args);
-                if let Some(command) = command {
-                    // If alias is the same as a command name, do not add the alias
-                    if let Some(_) = self.commands.get(alias.as_str()) {
-                        let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
+            if auth >= Auth::Mod {
+                if let Some(args) = args {
+                    let (alias, command) = pop_cmd(args);
+                    if let Some(command) = command {
+                        // If alias is the same as a command name, do not add the alias
+                        if let Some(_) = self.commands.get(alias.as_str()) {
+                            let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
                             return self.log_msg(msgv);
+                        }
+                        self.aliases.insert(alias, command);
+                        return None
+                    } else {
+                        let msgv = match self.aliases.remove(&alias) {
+                            Some(_) => None,
+                            None => Some(vec!(format!("Alias `{}` could not be removed.", alias))),
+                        };
+                        return self.log_msg(msgv);
                     }
-                    self.aliases.insert(alias, command);
-                    return None
                 } else {
-                    let msgv = match self.aliases.remove(&alias) {
-                        Some(_) => None,
-                        None => Some(vec!(format!("Alias `{}` could not be removed.", alias))),
-                    };
+                    let msgv = Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")));
                     return self.log_msg(msgv);
                 }
-            } else {
-                let msgv = Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")));
-                return self.log_msg(msgv);
-            }
+            } else { return None; }
         } else {
             let mut msgv = None;
             // Search for command and exec
             if let Some(c) = self.commands.get(&cmd.as_str()) {
-                msgv = c.exec(args);
+                if auth >= c.auth { msgv = c.exec(args); }
             }
             // Else search for alias and exec
             else if let Some(alias_cmd) = self.aliases.get(&cmd) {
                 let (c, args) = pop_cmd(alias_cmd.clone());
                 if let Some(c) = self.commands.get(c.as_str()) {
-                    msgv = c.exec(args);
+                    if auth >= c.auth { msgv = c.exec(args); }
                 }
             }
             return self.log_msg(msgv);
@@ -132,7 +134,7 @@ fn say() -> Cmd {
             } else { None }
         },
         bucket: None,
-        auth: Auth::Owner,
+        auth: Auth::Mod,
     }
 }
 
