@@ -21,6 +21,7 @@ impl CmdList {
 
         commands.insert("quote", quote());
         commands.insert("quoteadd", quoteadd());
+        commands.insert("quoterm", quoterm());
         commands.insert("say", say());
         commands.insert("count", count());
         commands.insert("version", version());
@@ -171,7 +172,7 @@ fn quote() -> Cmd {
             let t_state = t_state.lock().unwrap();
             if let Some(db) = &t_state.db {
                 let quote = db.query_row("SELECT * FROM quote ORDER BY RANDOM() LIMIT 1;", &[], |row| {
-                    let id: i32 = row.get(0);
+                    let id: u32 = row.get(0);
                     let q: String = row.get(1);
                     format!("[{}] {}", id, q)
                 });
@@ -196,6 +197,27 @@ fn quoteadd() -> Cmd {
                 if let Some(db) = &t_state.db {
                     db.execute("INSERT INTO quote (quote) values (?1)",
                     &[&args]).unwrap();
+                }
+            }
+            None
+        },
+        bucket: None,
+        auth: Auth::Mod,
+    }
+}
+
+fn quoterm() -> Cmd {
+    Cmd {
+        func: |t_state, _, args| {
+            if let Some(args) = args {
+                if let Ok(i) = args.parse::<u32>() {
+                    if i > 0 {
+                        let t_state = t_state.lock().unwrap();
+                        if let Some(db) = &t_state.db {
+                            let id = format!("{}", i);
+                            db.execute("DELETE FROM quote WHERE id=?1", &[&id]).unwrap();
+                        }
+                    }
                 }
             }
             None
