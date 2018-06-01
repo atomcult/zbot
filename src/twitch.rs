@@ -11,7 +11,7 @@ use config::Channel;
 use cmd;
 use state::ThreadState;
 
-pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: Channel, state: Arc<Mutex<ThreadState>>) {
+pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<String>, bot_user: String, bot_pass: String) {
 
     // Set up IRC config
     let cfg = Config {
@@ -25,6 +25,19 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
         ..Default::default()
     };
 
+    // Open log file
+    let log_file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("twitch.log");
+    let mut log = match log_file {
+        Ok(f) => f,
+        Err(e) => panic!("Error: {}", e),
+    };
+
+    // Create command buffer
+    let mut cmd_buffer = cmd::CmdList::new();
+
     loop { // Start loop to handle twitch RECONNECTs
         let s = IrcClient::from_config(cfg.clone()).unwrap();
         let s = match s.identify() {
@@ -36,19 +49,6 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
         s.send("CAP REQ :twitch.tv/membership").unwrap();
         s.send("CAP REQ :twitch.tv/tags").unwrap();
         s.send("CAP REQ :twitch.tv/commands").unwrap();
-
-        // Open log file
-        let log_file = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("twitch.log");
-        let mut log = match log_file {
-            Ok(f) => f,
-            Err(e) => panic!("Error: {}", e),
-        };
-
-        // Create command buffer
-        let mut cmd_buffer = cmd::CmdList::new();
 
         // Main command processing loop
         s.for_each_incoming(|msg| {

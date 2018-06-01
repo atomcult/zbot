@@ -31,7 +31,7 @@ fn main() {
         
         // Spawn thread
         threads.push(thread::spawn(|| {
-            twitch::init(user, pass, owners, channel, t_state);
+            twitch::init(t_state, channel, owners, user, pass);
         }));
     }
 
