@@ -1,5 +1,7 @@
-[twitch]
 user = "bot_user_name"
 pass = "oauth:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 owners = ["my_user_name"]
-channels = ["my_user_name", "friend_user_name"]
+
+[channels.my_channel]
+name = "my_chan"
+cmd_prefix = "!"
