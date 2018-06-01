@@ -2,9 +2,11 @@ use std;
 use std::io::Write;
 use std::default::Default;
 use std::sync::{Arc,Mutex};
+use std::time::Instant;
 use irc::client::prelude::*;
 use irc::error::IrcError;
 use irc::proto::message::Tag;
+use rb::*;
 use rusqlite::Connection;
 
 use auth::Auth;
@@ -55,7 +57,8 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
     }
 
     // Create command buffer
-    let mut cmd_buffer = cmd::CmdList::new();
+    let mut cmd_list = cmd::CmdList::new();
+    let mut send_buffer: SpscRb<Option<Instant>> = SpscRb::new(100);
 
     loop { // Start loop to handle twitch RECONNECTs
         let s = IrcClient::from_config(cfg.clone()).unwrap();
@@ -86,12 +89,8 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
                 Command::PRIVMSG(chan, mut cmd) => {
                     if cmd.remove(0) == chan_cfg.cmd_prefix {
                         let context = Context::new(&chan_cfg.name, tags, prefix, &owners);
-                        let msg_list = cmd_buffer.exec(state, context, &cmd);
-                        if let Some(msgv) = msg_list {
-                            for msg in &msgv {
-                                chanmsg(&s, &chan, msg).unwrap();
-                            }
-                        }
+                        let msgv = cmd_list.exec(state, context, &cmd);
+                        send_msg(&s, &mut send_buffer, &chan, msgv);
                     }
                 },
                 Command::Raw(cmd, ..) => {
@@ -157,7 +156,7 @@ impl Context {
     }
 }
 
-fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
+fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> std::result::Result<(), IrcError> {
     println!("SENDING >>> PRIVMSG {un} :{}\n", msg, un = chan);
     s.send_privmsg(chan, msg)
 }
@@ -171,3 +170,36 @@ fn log_format(s: String) -> String {
     }
 }
 
+fn send_msg(s: &IrcClient, send_buffer: &mut SpscRb<Option<Instant>>, chan:&str, msgv: Option<Vec<String>>) {
+    if let Some(msgv) = msgv {
+        let (prod, cons) = (send_buffer.producer(), send_buffer.consumer());
+
+        let mut purge_count = 0;
+        let mut buffer = [None;100];
+        if let Ok(_) = cons.get(&mut buffer) {
+            for inst in buffer.into_iter() {
+                if let Some(inst) = inst {
+                    if inst.elapsed().as_secs() >= 30 {
+                        purge_count += 1;
+                    } else { break; }
+                } else { break; }
+            }
+        }
+        if purge_count == 100 {
+            cons.skip_pending().unwrap();
+        } else if purge_count > 0 {
+            cons.skip(purge_count).unwrap();
+        }
+
+        if send_buffer.slots_free() >= msgv.len() {
+            let mut instv = Vec::new();
+            for _ in &msgv {
+                instv.push(Some(Instant::now()));
+            }
+            prod.write(&instv).unwrap();
+            for msg in msgv {
+                chanmsg(s, chan, &msg).unwrap();
+            }
+        }
+    }
+}

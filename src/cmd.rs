@@ -1,7 +1,6 @@
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
-use rb::*;
 
 use auth::Auth;
 use twitch::Context;
@@ -10,14 +9,12 @@ use state::ThreadState;
 pub struct CmdList {
     commands: HashMap<&'static str, Cmd>,
     aliases: HashMap<String, String>,
-    send_buffer: SpscRb<Option<Instant>>
 }
 
 impl CmdList {
     pub fn new() -> Self {
         let mut commands = HashMap::new();
         let aliases = HashMap::new();
-        let send_buffer = SpscRb::new(100);
 
         commands.insert("quote", quote());
         commands.insert("quoteadd", quoteadd());
@@ -30,7 +27,6 @@ impl CmdList {
         Self {
             commands,
             aliases,
-            send_buffer,
         }
     }
 
@@ -44,20 +40,19 @@ impl CmdList {
                         // If alias is the same as a command name, do not add the alias
                         if let Some(_) = self.commands.get(alias.as_str()) {
                             let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
-                            return self.log_msg(msgv);
+                            return msgv;
                         }
                         self.aliases.insert(alias, command);
                         return None
                     } else {
-                        let msgv = match self.aliases.remove(&alias) {
+                        return match self.aliases.remove(&alias) {
                             Some(_) => None,
                             None => Some(vec!(format!("Alias `{}` could not be removed.", alias))),
                         };
-                        return self.log_msg(msgv);
                     }
                 } else {
                     let msgv = Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")));
-                    return self.log_msg(msgv);
+                    return msgv;
                 }
             } else { return None; }
         } else {
@@ -73,41 +68,10 @@ impl CmdList {
                     if context.auth >= c.auth { msgv = c.exec(state, &context, args); }
                 }
             }
-            return self.log_msg(msgv);
+            return msgv;
         }
     }
 
-    fn log_msg(&mut self, msgv: Option<Vec<String>>) -> Option<Vec<String>> {
-        if let Some(msgv) = msgv {
-            let (prod, cons) = (self.send_buffer.producer(), self.send_buffer.consumer());
-
-            let mut purge_count = 0;
-            let mut buffer = [None;100];
-            if let Ok(_) = cons.get(&mut buffer) {
-                for inst in buffer.into_iter() {
-                    if let Some(inst) = inst {
-                        if inst.elapsed().as_secs() >= 30 {
-                            purge_count += 1;
-                        } else { break; }
-                    } else { break; }
-                }
-            }
-            if purge_count == 100 {
-                cons.skip_pending().unwrap();
-            } else if purge_count > 0 {
-                cons.skip(purge_count).unwrap();
-            }
-
-            if self.send_buffer.slots_free() >= msgv.len() {
-                let mut instv = Vec::new();
-                for _ in &msgv {
-                    instv.push(Some(Instant::now()));
-                }
-                prod.write(&instv).unwrap();
-                Some(msgv)
-            } else { None }
-        } else { None }
-    }
 
 }
 
