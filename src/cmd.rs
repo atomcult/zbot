@@ -1,6 +1,7 @@
 use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
+use rusqlite::Connection;
 
 use auth::Auth;
 use twitch::Context;
@@ -8,13 +9,11 @@ use state::ThreadState;
 
 pub struct CmdList {
     commands: HashMap<&'static str, Cmd>,
-    aliases: HashMap<String, String>,
 }
 
 impl CmdList {
     pub fn new() -> Self {
         let mut commands = HashMap::new();
-        let aliases = HashMap::new();
 
         commands.insert("quote", quote());
         commands.insert("quoteadd", quoteadd());
@@ -26,7 +25,6 @@ impl CmdList {
 
         Self {
             commands,
-            aliases,
         }
     }
 
@@ -36,20 +34,19 @@ impl CmdList {
             if context.auth >= Auth::Mod {
                 if let Some(args) = args {
                     let (alias, command) = pop_cmd(args);
-                    if let Some(command) = command {
-                        // If alias is the same as a command name, do not add the alias
-                        if let Some(_) = self.commands.get(alias.as_str()) {
-                            let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
-                            return msgv;
+                    let state = state.lock().unwrap();
+                    if let Some(db) = &state.db {
+                        rm_alias(&db, &alias);
+                        if let Some(command) = command {
+                            // If alias is the same as a command name, do not add the alias
+                            if let Some(_) = self.commands.get(alias.as_str()){
+                                let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
+                                return msgv;
+                            }
+                            add_alias(&db, &alias, &command);
                         }
-                        self.aliases.insert(alias, command);
-                        return None
-                    } else {
-                        return match self.aliases.remove(&alias) {
-                            Some(_) => None,
-                            None => Some(vec!(format!("Alias `{}` could not be removed.", alias))),
-                        };
                     }
+                    return None
                 } else {
                     let msgv = Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")));
                     return msgv;
@@ -57,12 +54,22 @@ impl CmdList {
             } else { return None; }
         } else {
             let mut msgv = None;
+
+            // Search for alias
+            let mut alias_cmd = None;
+            {
+                let state = state.lock().unwrap();
+                if let Some(db) = &state.db {
+                    alias_cmd = get_alias(&db, &cmd);
+                } 
+            }
+
             // Search for command and exec
             if let Some(c) = self.commands.get(&cmd.as_str()) {
                 if context.auth >= c.auth { msgv = c.exec(state, &context, args); }
             }
             // Else search for alias and exec
-            else if let Some(alias_cmd) = self.aliases.get(&cmd) {
+            else if let Some(alias_cmd) = alias_cmd {
                 let (c, args) = pop_cmd(alias_cmd.clone());
                 if let Some(c) = self.commands.get(c.as_str()) {
                     if context.auth >= c.auth { msgv = c.exec(state, &context, args); }
@@ -229,5 +236,24 @@ fn pop_cmd(s: String) -> (String, Option<String>) {
         (argv[0].to_string(), Some(argv[1].trim().to_string()))
     } else {
         (argv[0].to_string(), None)
+    }
+}
+
+fn rm_alias(db: &Connection, alias: &str) {
+    let _ = db.execute("DELETE FROM alias WHERE alias=?1", &[&alias]);
+}
+
+fn add_alias(db: &Connection, alias: &str, cmd: &str) {
+    let _ = db.execute("INSERT INTO alias (alias, command) VALUES (?1, ?2)", &[&alias, &cmd]);
+}
+
+fn get_alias(db: &Connection, alias: &str) -> Option<String> {
+    let cmd = db.query_row("SELECT * FROM alias WHERE alias=?1", &[&alias], |row| {
+        row.get(2)
+    });
+    if let Ok(cmd) = cmd {
+        Some(cmd)
+    } else {
+        None
     }
 }

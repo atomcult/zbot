@@ -47,9 +47,15 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
 
     // Try to create tables
     let _ = db.execute("CREATE TABLE quote (
-                      id       INTEGER PRIMARY KEY,
-                      quote    TEXT NOT NULL
-                      )", &[]);
+                        id       INTEGER PRIMARY KEY,
+                        quote    TEXT NOT NULL
+                        )", &[]);
+
+    let _ = db.execute("CREATE TABLE alias (
+                        id         INTEGER PRIMARY KEY,
+                        alias      TEXT NOT NULL,
+                        command    TEXT NOT NULL
+                        )", &[]);
 
     { // Add db to ThreadState
         let mut state = state.lock().unwrap();
