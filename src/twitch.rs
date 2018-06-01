@@ -44,15 +44,10 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
     let db = Connection::open(db_path).unwrap();
 
     // Try to create tables
-    let r = db.execute("CREATE TABLE quote (
+    let _ = db.execute("CREATE TABLE quote (
                       id       INTEGER PRIMARY KEY,
                       quote    TEXT NOT NULL
                       )", &[]);
-    if r.is_ok() {
-        let quote = "\"Wow, I can't believe the quote command works!\" ~Zed, 2018";
-        db.execute("INSERT INTO quote (quote) values (?1)",
-        &[&quote]).unwrap();
-    }
 
     { // Add db to ThreadState
         let mut state = state.lock().unwrap();
