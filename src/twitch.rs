@@ -11,66 +11,74 @@ use cmd;
 
 pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: Channel) {
 
-    // Set up IRC connection
+    // Set up IRC config
     let cfg = Config {
         owners: Some(owners.clone()),
-        nickname: Some(bot_user),
-        password: Some(bot_pass),
+        nickname: Some(bot_user.clone()),
+        password: Some(bot_pass.clone()),
         server: Some(String::from("irc.chat.twitch.tv")),
         port: Some(443),
         use_ssl: Some(true),
         channels: Some(vec!(format!("#{}", chan_cfg.name.to_lowercase()))),
         ..Default::default()
     };
-    let s = IrcClient::from_config(cfg).unwrap();
-    let s = match s.identify() {
-        Ok(_) => s,
-        Err(e) => panic!("Unable to identify to server: {}", e),
-    };
 
-    // Set up extra twitch irc capabilities
-    s.send("CAP REQ :twitch.tv/membership").unwrap();
-    s.send("CAP REQ :twitch.tv/tags").unwrap();
-    s.send("CAP REQ :twitch.tv/commands").unwrap();
+    loop { // Start loop to handle twitch RECONNECTs
+        let s = IrcClient::from_config(cfg.clone()).unwrap();
+        let s = match s.identify() {
+            Ok(_) => s,
+            Err(e) => panic!("Unable to identify to server: {}", e),
+        };
 
-    // Open log file
-    let log_file = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("twitch.log");
-    let mut log = match log_file {
-        Ok(f) => f,
-        Err(e) => panic!("Error: {}", e),
-    };
+        // Set up extra twitch irc capabilities
+        s.send("CAP REQ :twitch.tv/membership").unwrap();
+        s.send("CAP REQ :twitch.tv/tags").unwrap();
+        s.send("CAP REQ :twitch.tv/commands").unwrap();
 
-    // Create command buffer
-    let mut cmd_buffer = cmd::CmdList::new();
+        // Open log file
+        let log_file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("twitch.log");
+        let mut log = match log_file {
+            Ok(f) => f,
+            Err(e) => panic!("Error: {}", e),
+        };
 
-    // Main command processing loop
-    s.for_each_incoming(|msg| {
-        // Log the message
-        let log_msg = log_format(msg.to_string());
-        print!("{}", log_msg);
-        let _ = log.write_all(log_msg.as_bytes());
+        // Create command buffer
+        let mut cmd_buffer = cmd::CmdList::new();
 
-        // Parse
-        let Message { command, tags, prefix } = msg;
-        match command {
-            Command::PING(server, None) => s.send("PONG :tmi.twitch.tv").unwrap(),
-            Command::PRIVMSG(chan, mut cmd) => {
-                if cmd.remove(0) == chan_cfg.cmd_prefix {
-                    let auth = eval_auth(tags, prefix, &owners);
-                    let msg_list = cmd_buffer.exec(auth, &cmd);
-                    if let Some(msgv) = msg_list {
-                        for msg in &msgv {
-                            chanmsg(&s, &chan, msg).unwrap();
+        // Main command processing loop
+        s.for_each_incoming(|msg| {
+            // Log the message
+            let log_msg = log_format(msg.to_string());
+            print!("{}", log_msg);
+            let _ = log.write_all(log_msg.as_bytes());
+
+            // Parse
+            let Message { command, tags, prefix } = msg;
+            match command {
+                Command::PING(_, None) => s.send("PONG :tmi.twitch.tv").unwrap(),
+                Command::PRIVMSG(chan, mut cmd) => {
+                    if cmd.remove(0) == chan_cfg.cmd_prefix {
+                        let auth = eval_auth(tags, prefix, &owners);
+                        let msg_list = cmd_buffer.exec(auth, &cmd);
+                        if let Some(msgv) = msg_list {
+                            for msg in &msgv {
+                                chanmsg(&s, &chan, msg).unwrap();
+                            }
                         }
                     }
-                }
-            }
-            _ => {}
-        };
-    }).unwrap();
+                },
+                Command::Raw(cmd, ..) => {
+                    if cmd == "RECONNECT" {
+                        &s.send_quit("");
+                    }
+                },
+                _ => {},
+            };
+        }).unwrap();
+    }
 }
 
 fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
