@@ -191,10 +191,12 @@ fn quote() -> Cmd {
 fn quoteadd() -> Cmd {
     Cmd {
         func: |t_state, _, args| {
-            let t_state = t_state.lock().unwrap();
-            if let Some(db) = &t_state.db {
-                db.execute("INSERT INTO quote (quote) values (?1)",
-                &[&args]).unwrap();
+            if let Some(args) = args {
+                let t_state = t_state.lock().unwrap();
+                if let Some(db) = &t_state.db {
+                    db.execute("INSERT INTO quote (quote) values (?1)",
+                    &[&args]).unwrap();
+                }
             }
             None
         },
