@@ -9,16 +9,6 @@ pub enum Auth {
 }
 
 impl Auth {
-    fn from_str(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
-            "owner" => Auth::Owner,
-            "streamer" => Auth::Streamer,
-            "mod" => Auth::Mod,
-            "subscriber" => Auth::Subscriber,
-            _ => Auth::Viewer,
-        }
-    }
-
     fn as_u8(&self) -> u8 {
         match self {
             Auth::Owner      => 4,
