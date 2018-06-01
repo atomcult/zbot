@@ -1,9 +1,10 @@
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
+use std::sync::{Arc,Mutex};
 use rb::*;
 
 use auth::Auth;
-
+use state::ThreadState;
 
 pub struct CmdList {
     commands: HashMap<&'static str, Cmd>,
@@ -20,6 +21,7 @@ impl CmdList {
         commands.insert("say", say());
         commands.insert("count", count());
         commands.insert("version", version());
+        commands.insert("shutdown", shutdown());
 
         Self {
             commands,
@@ -28,7 +30,7 @@ impl CmdList {
         }
     }
 
-    pub fn exec(&mut self, auth: Auth, command: &str) -> Option<Vec<String>> {
+    pub fn exec(&mut self, state: Arc<Mutex<ThreadState>>, auth: Auth, command: &str) -> Option<Vec<String>> {
         let (cmd, args) = pop_cmd(command.to_string());
         if cmd == "alias" {
             if auth >= Auth::Mod {
@@ -58,13 +60,13 @@ impl CmdList {
             let mut msgv = None;
             // Search for command and exec
             if let Some(c) = self.commands.get(&cmd.as_str()) {
-                if auth >= c.auth { msgv = c.exec(args); }
+                if auth >= c.auth { msgv = c.exec(state, args); }
             }
             // Else search for alias and exec
             else if let Some(alias_cmd) = self.aliases.get(&cmd) {
                 let (c, args) = pop_cmd(alias_cmd.clone());
                 if let Some(c) = self.commands.get(c.as_str()) {
-                    if auth >= c.auth { msgv = c.exec(args); }
+                    if auth >= c.auth { msgv = c.exec(state, args); }
                 }
             }
             return self.log_msg(msgv);
@@ -106,14 +108,14 @@ impl CmdList {
 }
 
 pub struct Cmd {
-    func: fn(Option<String>) -> Option<Vec<String>>,
+    func: fn(state: Arc<Mutex<ThreadState>>, Option<String>) -> Option<Vec<String>>,
     pub bucket: Option<Bucket>,
     pub auth: Auth,
 }
 
 impl Cmd {
-    pub fn exec(&self, args: Option<String>) -> Option<Vec<String>> {
-        (self.func)(args)
+    pub fn exec(&self, state: Arc<Mutex<ThreadState>>, args: Option<String>) -> Option<Vec<String>> {
+        (self.func)(state, args)
     }
 }
 
@@ -129,7 +131,7 @@ pub struct Bucket {
 
 fn say() -> Cmd {
     Cmd {
-        func: |args| {
+        func: |_, args| {
             if let Some(args) = args {
                 Some(vec!(args))
             } else { None }
@@ -141,7 +143,7 @@ fn say() -> Cmd {
 
 fn count() -> Cmd {
     Cmd {
-        func: |args| {
+        func: |_, args| {
             if let Some(args) = args {
                 match args.parse::<u32>() {
                     Ok(u) => {
@@ -160,9 +162,22 @@ fn count() -> Cmd {
     }
 }
 
+fn shutdown() -> Cmd {
+    Cmd {
+        func: |t_state, _| {
+            let t_state = t_state.lock().unwrap();
+            let mut state = t_state.main.lock().unwrap();
+            state.shutdown = true;
+            None
+        },
+        bucket: None,
+        auth: Auth::Owner,
+    }
+}
+
 fn version() -> Cmd {
     Cmd {
-        func: |_| {
+        func: |_, _| {
             let v = env!("GIT_VERSION");
             Some(vec!(String::from(v)))
         },

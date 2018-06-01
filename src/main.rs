@@ -8,14 +8,17 @@ extern crate rb;
 mod auth;
 mod config;
 mod cmd;
+mod state;
 mod twitch;
 
 use std::thread;
+use std::sync::Arc;
 
 fn main() {
     // TODO: Add cli parsing
     // TODO: Changeable config dir
     let cfg = config::Config::open();
+    let state = state::MainState::new();
 
     let mut threads = Vec::new();
     for (_, channel) in &cfg.channels {
@@ -24,14 +27,23 @@ fn main() {
         let pass = cfg.pass.clone();
         let owners = cfg.owners.clone();
         let channel = channel.clone();
+        let t_state = state::ThreadState::new(Arc::clone(&state));
         
         // Spawn thread
         threads.push(thread::spawn(|| {
-            twitch::init(user, pass, owners, channel);
+            twitch::init(user, pass, owners, channel, t_state);
         }));
     }
 
-    for t in threads {
-        t.join().unwrap_or_else(|_|());
+    loop {
+        { // Lock state and check for shutdown
+            let state = state.lock().unwrap();
+            if state.shutdown { std::process::exit(0) }
+        } // Unlock state
+        thread::sleep(std::time::Duration::from_secs(1));
     }
+
+    // for t in threads {
+    //     t.join().unwrap_or_else(|_|());
+    // }
 }

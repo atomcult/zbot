@@ -4,12 +4,14 @@ use std::default::Default;
 use irc::client::prelude::*;
 use irc::error::IrcError;
 use irc::proto::message::Tag;
+use std::sync::{Arc,Mutex};
 
 use auth::Auth;
 use config::Channel;
 use cmd;
+use state::ThreadState;
 
-pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: Channel) {
+pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: Channel, state: Arc<Mutex<ThreadState>>) {
 
     // Set up IRC config
     let cfg = Config {
@@ -50,6 +52,9 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
 
         // Main command processing loop
         s.for_each_incoming(|msg| {
+            // Clone ref to state
+            let state = Arc::clone(&state);
+
             // Log the message
             let log_msg = log_format(msg.to_string());
             print!("{}", log_msg);
@@ -62,7 +67,7 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
                 Command::PRIVMSG(chan, mut cmd) => {
                     if cmd.remove(0) == chan_cfg.cmd_prefix {
                         let auth = eval_auth(tags, prefix, &owners);
-                        let msg_list = cmd_buffer.exec(auth, &cmd);
+                        let msg_list = cmd_buffer.exec(state, auth, &cmd);
                         if let Some(msgv) = msg_list {
                             for msg in &msgv {
                                 chanmsg(&s, &chan, msg).unwrap();
