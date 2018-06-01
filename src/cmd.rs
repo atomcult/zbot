@@ -19,6 +19,7 @@ impl CmdList {
         commands.insert("quoteadd", quoteadd());
         commands.insert("quoterm", quoterm());
         commands.insert("say", say());
+        commands.insert("thicc", thicc());
         commands.insert("count", count());
         commands.insert("version", version());
         commands.insert("shutdown", shutdown());
@@ -134,6 +135,76 @@ fn count() -> Cmd {
         },
         bucket: None,
         auth: Auth::Owner,
+    }
+}
+
+fn thicc() -> Cmd {
+    Cmd {
+        func: |_, _, args| {
+            if let Some(arg) = args {
+                let mut response = String::new();
+                for letter in arg.chars() {
+                    response.push(match letter {
+                        'a' => '卂',
+                        'b' => '乃',
+                        'c' => '匚',
+                        'd' => '刀',
+                        'e' => '乇',
+                        'f' => '下',
+                        'g' => '厶',
+                        'h' => '卄',
+                        'i' => '工',
+                        'j' => '丁',
+                        'k' => '长',
+                        'l' => '乚',
+                        'm' => '从',
+                        'n' => '𠘨',
+                        'o' => '口',
+                        'p' => '尸',
+                        'q' => '㔿',
+                        'r' => '尺',
+                        's' => '丂',
+                        't' => '丅',
+                        'u' => '凵',
+                        'v' => 'リ',
+                        'w' => '山',
+                        'x' => '乂',
+                        'y' => '丫',
+                        'z' => '乙',
+                        'A' => '卂',
+                        'B' => '乃',
+                        'C' => '匚',
+                        'D' => '刀',
+                        'E' => '乇',
+                        'F' => '下',
+                        'G' => '厶',
+                        'H' => '卄',
+                        'I' => '工',
+                        'J' => '丁',
+                        'K' => '长',
+                        'L' => '乚',
+                        'M' => '从',
+                        'N' => '𠘨',
+                        'O' => '口',
+                        'P' => '尸',
+                        'Q' => '㔿',
+                        'R' => '尺',
+                        'S' => '丂',
+                        'T' => '丅',
+                        'U' => '凵',
+                        'V' => 'リ',
+                        'W' => '山',
+                        'X' => '乂',
+                        'Y' => '丫',
+                        'Z' => '乙',
+                        x => x,
+                    });
+                }
+                Some(vec!(response))
+            } else { None }
+        },
+        bucket: None,
+        auth: Auth::Viewer,
     }
 }
 

@@ -93,7 +93,10 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
             match command {
                 Command::PING(_, None) => s.send("PONG :tmi.twitch.tv").unwrap(),
                 Command::PRIVMSG(chan, mut cmd) => {
-                    if cmd.remove(0) == chan_cfg.cmd_prefix {
+                    if cmd.to_lowercase() == "come on" {
+                        let msgv = Some(vec!("and slam, and welcome to the jam Jebaited".to_string()));
+                        send_msg(&s, &mut send_buffer, &chan, msgv);
+                    } else if cmd.remove(0) == chan_cfg.cmd_prefix {
                         let context = Context::new(&chan_cfg.name, tags, prefix, &owners);
                         let msgv = cmd_list.exec(state, context, &cmd);
                         send_msg(&s, &mut send_buffer, &chan, msgv);
