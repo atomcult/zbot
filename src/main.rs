@@ -42,8 +42,4 @@ fn main() {
         } // Unlock state
         thread::sleep(std::time::Duration::from_secs(1));
     }
-
-    // for t in threads {
-    //     t.join().unwrap_or_else(|_|());
-    // }
 }

@@ -66,8 +66,8 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
                 Command::PING(_, None) => s.send("PONG :tmi.twitch.tv").unwrap(),
                 Command::PRIVMSG(chan, mut cmd) => {
                     if cmd.remove(0) == chan_cfg.cmd_prefix {
-                        let auth = eval_auth(tags, prefix, &owners);
-                        let msg_list = cmd_buffer.exec(state, auth, &cmd);
+                        let context = Context::new(&chan_cfg.name, tags, prefix, &owners);
+                        let msg_list = cmd_buffer.exec(state, context, &cmd);
                         if let Some(msgv) = msg_list {
                             for msg in &msgv {
                                 chanmsg(&s, &chan, msg).unwrap();
@@ -86,27 +86,37 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
     }
 }
 
-fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
-    println!("SENDING >>> PRIVMSG {un} :{}\n", msg, un = chan);
-    s.send_privmsg(chan, msg)
+pub struct Context {
+    pub sender: String,
+    pub channel: String,
+    pub auth: Auth,
+    pub tags: Option<Vec<Tag>>,
+    pub prefix: Option<String>,
 }
 
-fn log_format(s: String) -> String {
-    use std::time::SystemTime;
-    if let Ok(time) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-        format!("[{}] {}", time.as_secs(), s)
-    } else {
-        format!("[ERR] {}", s)
+impl Context {
+    pub fn new(channel: &str, tags: Option<Vec<Tag>>, prefix: Option<String>, owners: &[String]) -> Self {
+        let sender = Self::user_from_prefix(&prefix);
+        let auth = Self::eval_auth(&tags, &sender, owners);
+        Self {
+            sender,
+            channel: String::from(channel),
+            auth,
+            tags,
+            prefix,
+        }
     }
-}
 
-fn eval_auth(tags: Option<Vec<Tag>>, prefix: Option<String>, owners: &[String]) -> Auth {
-    if let Some(prefix) = prefix {
+    fn user_from_prefix(prefix: &Option<String>) -> String {
+        let prefix = prefix.clone().unwrap();
         let prefix: Vec<&str> = prefix.split('!').collect();
-        let from_user = prefix[0];
+        String::from(prefix[0])
+    }
+
+    fn eval_auth(tags: &Option<Vec<Tag>>, sender: &str, owners: &[String]) -> Auth {
         if let Some(tags) = tags {
             // Check if user is an owner
-            for owner in owners.into_iter() { if from_user == owner.as_str() { return Auth::Owner } }
+            for owner in owners.into_iter() { if sender == owner.as_str() { return Auth::Owner } }
 
             // Otherwise get their auth from tags
             for Tag(key, val) in tags {
@@ -124,6 +134,21 @@ fn eval_auth(tags: Option<Vec<Tag>>, prefix: Option<String>, owners: &[String]) 
                 }
             }
         }
+        Auth::Viewer
     }
-    Auth::Viewer
 }
+
+fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
+    println!("SENDING >>> PRIVMSG {un} :{}\n", msg, un = chan);
+    s.send_privmsg(chan, msg)
+}
+
+fn log_format(s: String) -> String {
+    use std::time::SystemTime;
+    if let Ok(time) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        format!("[{}] {}", time.as_secs(), s)
+    } else {
+        format!("[ERR] {}", s)
+    }
+}
+
