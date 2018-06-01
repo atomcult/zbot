@@ -26,10 +26,12 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
     };
 
     // Open log file
+    let mut log_path = chan_cfg.dir.clone();
+    log_path.push("log");
     let log_file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open("twitch.log");
+        .open(log_path);
     let mut log = match log_file {
         Ok(f) => f,
         Err(e) => panic!("Error: {}", e),

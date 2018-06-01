@@ -1,5 +1,5 @@
 use std::{env,process};
-use std::fs::File;
+use std::fs::{DirBuilder,File};
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::io::prelude::*;
@@ -35,8 +35,15 @@ impl Config {
         // Recreate each channel with config dir
         let mut channels = HashMap::new();
         for (_, mut chan) in &cfg.channels {
-            let mut path = path.clone();
-            path.push(format!("data/{}", chan.name));
+            let mut path = PathBuf::from(path.parent().unwrap());
+            path.push(format!("data/{}", chan.name.to_lowercase()));
+            if !path.exists() {
+                DirBuilder::new()
+                    .recursive(true)
+                    .create(&path)
+                    .unwrap();
+            }
+
             channels.insert(chan.name.clone(), Channel {
                 dir: path,
                 name: chan.name.clone(),
