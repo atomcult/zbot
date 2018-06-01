@@ -1,4 +1,5 @@
 use std::sync::{Arc,Mutex};
+use rusqlite::Connection;
 
 pub struct MainState {
     pub shutdown: bool,
@@ -15,11 +16,12 @@ impl MainState {
 
 pub struct ThreadState {
     pub main: Arc<Mutex<MainState>>,
+    pub db: Option<Connection>,
 }
 
 impl ThreadState {
     pub fn new(main: Arc<Mutex<MainState>>) -> Arc<Mutex<ThreadState>> {
-        let state = ThreadState { main };
+        let state = ThreadState { main, db: None };
         Arc::new(Mutex::new(state))
     }
 }

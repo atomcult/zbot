@@ -1,10 +1,11 @@
 use std;
 use std::io::Write;
 use std::default::Default;
+use std::sync::{Arc,Mutex};
 use irc::client::prelude::*;
 use irc::error::IrcError;
 use irc::proto::message::Tag;
-use std::sync::{Arc,Mutex};
+use rusqlite::Connection;
 
 use auth::Auth;
 use config::Channel;
@@ -36,6 +37,27 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
         Ok(f) => f,
         Err(e) => panic!("Error: {}", e),
     };
+
+    // Open SQLite connection
+    let mut db_path = chan_cfg.dir.clone();
+    db_path.push("db");
+    let db = Connection::open(db_path).unwrap();
+
+    // Try to create tables
+    let r = db.execute("CREATE TABLE quote (
+                      id       INTEGER PRIMARY KEY,
+                      quote    TEXT NOT NULL
+                      )", &[]);
+    if r.is_ok() {
+        let quote = "\"Wow, I can't believe the quote command works!\" ~Zed, 2018";
+        db.execute("INSERT INTO quote (quote) values (?1)",
+        &[&quote]).unwrap();
+    }
+
+    { // Add db to ThreadState
+        let mut state = state.lock().unwrap();
+        state.db = Some(db);
+    }
 
     // Create command buffer
     let mut cmd_buffer = cmd::CmdList::new();

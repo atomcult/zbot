@@ -19,6 +19,8 @@ impl CmdList {
         let aliases = HashMap::new();
         let send_buffer = SpscRb::new(100);
 
+        commands.insert("quote", quote());
+        commands.insert("quoteadd", quoteadd());
         commands.insert("say", say());
         commands.insert("count", count());
         commands.insert("version", version());
@@ -160,6 +162,44 @@ fn count() -> Cmd {
         },
         bucket: None,
         auth: Auth::Owner,
+    }
+}
+
+fn quote() -> Cmd {
+    Cmd {
+        func: |t_state, _, _| {
+            let t_state = t_state.lock().unwrap();
+            if let Some(db) = &t_state.db {
+                let quote = db.query_row("SELECT * FROM quote ORDER BY RANDOM() LIMIT 1;", &[], |row| {
+                    let id: i32 = row.get(0);
+                    let q: String = row.get(1);
+                    format!("[{}] {}", id, q)
+                });
+                if let Ok(quote) = quote {
+                    let mut v = Vec::new();
+                    v.push(quote);
+                    return Some(v)
+                }
+            }
+            None
+        },
+        bucket: None,
+        auth: Auth::Viewer,
+    }
+}
+
+fn quoteadd() -> Cmd {
+    Cmd {
+        func: |t_state, _, args| {
+            let t_state = t_state.lock().unwrap();
+            if let Some(db) = &t_state.db {
+                db.execute("INSERT INTO quote (quote) values (?1)",
+                &[&args]).unwrap();
+            }
+            None
+        },
+        bucket: None,
+        auth: Auth::Mod,
     }
 }
 
