@@ -1,5 +1,6 @@
 use std::{env,process};
 use std::fs::File;
+use std::path::PathBuf;
 use std::collections::HashMap;
 use std::io::prelude::*;
 use toml;
@@ -13,9 +14,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn open() -> Config {
+    pub fn open(path: PathBuf) -> Config {
         // Open config.toml
-        let mut file = File::open("config.toml").unwrap_or_else( |_| {
+        let mut file = File::open(&path).unwrap_or_else( |_| {
             if let Ok(dir) = env::current_dir() {
                 println!("`{}/config.toml` does not exist.", dir.to_str().unwrap());
             } else {
@@ -28,13 +29,30 @@ impl Config {
         // Read contents of config.toml and serialize
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
-        toml::from_str(&contents).unwrap()
+        let mut cfg: Config = toml::from_str(&contents).unwrap();
+
+        // FIXME: Surely there's a better way to do this
+        // Recreate each channel with config dir
+        let mut channels = HashMap::new();
+        for (_, mut chan) in &cfg.channels {
+            let mut path = path.clone();
+            path.push(format!("data/{}", chan.name));
+            channels.insert(chan.name.clone(), Channel {
+                dir: path,
+                name: chan.name.clone(),
+                cmd_prefix: chan.cmd_prefix,
+            });
+        }
+        cfg.channels = channels;
+        cfg
     }
 }
 
 #[serde(default)]
 #[derive(Clone, Deserialize, Debug)]
 pub struct Channel {
+    #[serde(skip)]
+    pub dir: PathBuf,
     pub name: String,
     pub cmd_prefix: char,
 }
@@ -44,6 +62,7 @@ impl Default for Channel {
         Self {
             name: String::from(""),
             cmd_prefix: '!',
+            dir: PathBuf::new(),
         }
     }
 }
