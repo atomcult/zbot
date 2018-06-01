@@ -83,7 +83,7 @@ pub fn init(bot_user: String, bot_pass: String, owners: Vec<String>, chan_cfg: C
 
 fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> Result<(), IrcError> {
     println!("SENDING >>> PRIVMSG {un} :{}\n", msg, un = chan);
-    s.send(format!("PRIVMSG {un} :{}", msg, un = chan).as_str())
+    s.send_privmsg(chan, msg)
 }
 
 fn log_format(s: String) -> String {
