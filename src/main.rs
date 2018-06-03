@@ -5,6 +5,7 @@ extern crate toml;
 #[macro_use] extern crate serde_derive;
 extern crate rb;
 extern crate rusqlite;
+extern crate rand;
 
 mod auth;
 mod config;

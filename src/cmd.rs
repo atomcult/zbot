@@ -2,6 +2,7 @@ use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
 use rusqlite::Connection;
+use rand::prelude::*;
 
 use auth::Auth;
 use twitch::Context;
@@ -20,6 +21,7 @@ impl CmdList {
         commands.insert("quoterm", quoterm());
         commands.insert("say", say());
         commands.insert("thicc", thicc());
+        commands.insert("8ball", eightball());
         commands.insert("count", count());
         commands.insert("version", version());
         commands.insert("shutdown", shutdown());
@@ -202,6 +204,37 @@ fn thicc() -> Cmd {
                 }
                 Some(vec!(response))
             } else { None }
+        },
+        bucket: None,
+        auth: Auth::Viewer,
+    }
+}
+
+fn eightball() -> Cmd {
+    Cmd {
+        func: |_, _, _| {
+            let mut rng = thread_rng();
+            let answers = vec!("It is certain.",
+                               "It is decidedly so.",
+                               "Without a doubt.",
+                               "Yes, definitely.",
+                               "You may rely on it.",
+                               "As I see it, yes.",
+                               "Most likely.",
+                               "Outlook good.",
+                               "Yes.",
+                               "Signs point to yes.",
+                               "Reply hazy, try again.",
+                               "Ask again later.",
+                               "Better not tell you now.",
+                               "Cannot predict now.",
+                               "Concentrate and ask again.",
+                               "Don't count on it.",
+                               "My reply is no.",
+                               "My sources say now.",
+                               "Outlook not so good.",
+                               "Very doubtful.");
+            Some(vec!(String::from(answers[rng.gen_range(0,answers.len())])))
         },
         bucket: None,
         auth: Auth::Viewer,
