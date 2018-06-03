@@ -22,6 +22,7 @@ impl CmdList {
         commands.insert("say", say());
         commands.insert("thicc", thicc());
         commands.insert("8ball", eightball());
+        commands.insert("flipcoin", coinflip());
         commands.insert("count", count());
         commands.insert("version", version());
         commands.insert("shutdown", shutdown());
@@ -235,6 +236,37 @@ fn eightball() -> Cmd {
                                "Outlook not so good.",
                                "Very doubtful.");
             Some(vec!(String::from(answers[rng.gen_range(0,answers.len())])))
+        },
+        bucket: None,
+        auth: Auth::Viewer,
+    }
+}
+
+fn coinflip() -> Cmd {
+    Cmd {
+        func: |_, _, args| {
+            if let Some(args) = args {
+                let iter = args.parse::<u8>();
+                if let Ok(iter) = iter {
+                    let mut r = String::new();
+                    for _ in 0..iter as usize {
+                        if random() {
+                            r.push('H');
+                        } else {
+                            r.push('T');
+                        }
+                    }
+                    return Some(vec!(r));
+                } else {
+                    return None
+                }
+            } else {
+                if random() {
+                    return Some(vec!(String::from("Heads")))
+                } else {
+                    return Some(vec!(String::from("Tails")))
+                }
+            }
         },
         bucket: None,
         auth: Auth::Viewer,
