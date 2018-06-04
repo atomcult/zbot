@@ -131,6 +131,22 @@ impl Context {
         }
     }
 
+    pub fn get_sender_display(&self) -> Option<String> {
+        if let Some(tags) = &self.tags {
+            for Tag(key,val) in tags {
+                if key == "display-name" {
+                    if let Some(val) = val {
+                        let display_name = val.clone();
+                        return Some(display_name)
+                    }
+                }
+            }
+            None
+        } else {
+            None
+        }
+    }
+
     fn user_from_prefix(prefix: &Option<String>) -> String {
         let prefix = prefix.clone().unwrap();
         let prefix: Vec<&str> = prefix.split('!').collect();
