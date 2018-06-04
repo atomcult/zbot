@@ -326,7 +326,13 @@ fn roll() -> Cmd {
                 Some(vec!(format!("{}", sum)))
             } else {
                 let roll = rng.gen_range(1,20);
-                Some(vec!(format!("{}", roll)))
+                let mut roll_string = format!("{}", roll);
+                if roll_string == "20" {
+                    roll_string.push_str(" PogChamp");
+                } else if roll_string == "1" {
+                    roll_string.push_str(" NotLikeThis");
+                }
+                Some(vec!(roll_string))
             }
         },
         bucket: None,
