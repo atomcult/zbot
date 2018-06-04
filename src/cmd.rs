@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
 use rusqlite::Connection;
 use rand::prelude::*;
+use rand::distributions::Uniform;
+use regex::Regex;
 
 use auth::Auth;
 use twitch::Context;
@@ -23,6 +25,7 @@ impl CmdList {
         commands.insert("thicc", thicc());
         commands.insert("8ball", eightball());
         commands.insert("flipcoin", coinflip());
+        commands.insert("roll", roll());
         commands.insert("count", count());
         commands.insert("version", version());
         commands.insert("shutdown", shutdown());
@@ -65,7 +68,7 @@ impl CmdList {
                 let state = state.lock().unwrap();
                 if let Some(db) = &state.db {
                     alias_cmd = get_alias(&db, &cmd);
-                } 
+                }
             }
 
             // Search for command and exec
@@ -266,6 +269,64 @@ fn coinflip() -> Cmd {
                 } else {
                     return Some(vec!(String::from("Tails")))
                 }
+            }
+        },
+        bucket: None,
+        auth: Auth::Viewer,
+    }
+}
+
+fn roll() -> Cmd {
+    Cmd {
+        func: |_, _, args| {
+            let mut rng = thread_rng();
+            if let Some(args) = args {
+                let argv: Vec<&str> = args.split_whitespace().collect();
+
+                let re_roll = Regex::new(r"^(\d+)?d(\d+)(:?[+-](\d+))?$").unwrap();
+                let re_mod = Regex::new(r"^[+-]?\d+$").unwrap();
+
+                let mut sum = 0;
+                let mut sign = 1;
+                for arg in argv {
+                    if re_roll.is_match(arg) {
+                        let caps = re_roll.captures(arg).unwrap();
+
+                        let num_rolls;
+                        let num_die_faces;
+                        match caps.get(1) {
+                            Some(m) => num_rolls = m.as_str().parse::<i64>().unwrap(),
+                            None => num_rolls = 1,
+                        }
+                        num_die_faces = caps.get(2).unwrap().as_str().parse::<i64>().unwrap();
+                        if let Some(m) = caps.get(3) {
+                            sum += m.as_str().parse::<i64>().unwrap()
+                        }
+
+                        // If more than one iteration, create generator so that
+                        // distribution is flat, and perform sum.
+                        if num_rolls > 1 {
+                            let between = Uniform::from(1..(num_die_faces+1));
+                            for _ in 0..num_rolls {
+                                sum += sign * rng.sample(&between);
+                            }
+                        } else {
+                            sum += sign * rng.gen_range::<i64>(1, num_die_faces + 1);
+                        }
+                    } else if re_mod.is_match(arg) {
+                        sum += sign * arg.parse::<i64>().unwrap();
+                    } else if arg == "+" {
+                        sign = 1;
+                    } else if arg == "-" {
+                        sign = -1;
+                    } else {
+                        return None;
+                    }
+                }
+                Some(vec!(format!("{}", sum)))
+            } else {
+                let roll = rng.gen_range(1,20);
+                Some(vec!(format!("{}", roll)))
             }
         },
         bucket: None,

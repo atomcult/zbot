@@ -6,6 +6,7 @@ extern crate toml;
 extern crate rb;
 extern crate rusqlite;
 extern crate rand;
+extern crate regex;
 
 mod auth;
 mod config;
