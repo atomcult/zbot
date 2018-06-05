@@ -230,7 +230,7 @@ fn eightball() -> Cmd {
                                "Signs point to yes.",
                                "Don't count on it.",
                                "My reply is no.",
-                               "My sources say now.",
+                               "My sources say no.",
                                "Outlook not so good.",
                                "Very doubtful.");
             Some(vec!(String::from(answers[rng.gen_range(0,answers.len())])))
