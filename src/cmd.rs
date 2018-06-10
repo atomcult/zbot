@@ -25,6 +25,7 @@ impl CmdList {
         commands.insert("thicc", thicc());
         commands.insert("8ball", eightball());
         commands.insert("flipcoin", coinflip());
+        commands.insert("tcount", tcount());
         commands.insert("roll", roll());
         commands.insert("count", count());
         commands.insert("version", version());
@@ -329,6 +330,30 @@ fn roll() -> Cmd {
                 }
                 Some(vec!(roll_string))
             }
+        },
+        bucket: None,
+        auth: Auth::Viewer,
+    }
+}
+
+fn tcount() -> Cmd {
+    Cmd {
+        func: |_, context, _| {
+            let sender = &context.sender;
+            let display = context.get_sender_display().unwrap();
+            // hash username
+            let mut hash: u64 = 0;
+            for b in sender.as_bytes() {
+                hash += *b as u64;
+                hash += (b << 10) as u64;
+                hash ^= (b >> 6) as u64;
+            }
+            hash += hash << 3;
+            hash ^= hash >> 11;
+            hash += hash << 15; 
+
+            let tcount = (hash % 101) as u8;
+            Some(vec!(format!("{}: {}/100", display, tcount)))
         },
         bucket: None,
         auth: Auth::Viewer,
