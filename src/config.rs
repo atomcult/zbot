@@ -1,8 +1,8 @@
-use std::{env,process};
-use std::fs::{DirBuilder,File};
-use std::path::PathBuf;
+use std::{env, process};
 use std::collections::HashMap;
+use std::fs::{DirBuilder, File};
 use std::io::prelude::*;
+use std::path::PathBuf;
 use toml;
 
 #[derive(Clone, Deserialize, Debug)]
@@ -16,11 +16,13 @@ pub struct Config {
 impl Config {
     pub fn open(path: &PathBuf) -> Config {
         // Open config.toml
-        let mut file = File::open(&path).unwrap_or_else( |_| {
+        let mut file = File::open(&path).unwrap_or_else(|_| {
             if let Ok(dir) = env::current_dir() {
                 println!("`{}/config.toml` does not exist.", dir.to_str().unwrap());
             } else {
-                println!("Current directory does not exist, or you do not have sufficient permissions.");
+                println!(
+                    "Current directory does not exist, or you do not have sufficient permissions."
+                );
             }
 
             process::exit(1);
@@ -38,17 +40,17 @@ impl Config {
             let mut path = PathBuf::from(path.parent().unwrap());
             path.push(format!("data/{}", chan.name.to_lowercase()));
             if !path.exists() {
-                DirBuilder::new()
-                    .recursive(true)
-                    .create(&path)
-                    .unwrap();
+                DirBuilder::new().recursive(true).create(&path).unwrap();
             }
 
-            channels.insert(chan.name.clone(), Channel {
-                dir: path,
-                name: chan.name.clone(),
-                cmd_prefix: chan.cmd_prefix,
-            });
+            channels.insert(
+                chan.name.clone(),
+                Channel {
+                    dir: path,
+                    name: chan.name.clone(),
+                    cmd_prefix: chan.cmd_prefix,
+                },
+            );
         }
         cfg.channels = channels;
         cfg

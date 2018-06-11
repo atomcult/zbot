@@ -1,20 +1,27 @@
-use std;
-use std::io::Write;
-use std::default::Default;
-use std::sync::{Arc,Mutex};
-use std::time::Instant;
+
+
+use auth::Auth;
+use cmd;
+use config::Channel;
 use irc::client::prelude::*;
 use irc::error::IrcError;
 use irc::proto::message::Tag;
 use rb::*;
 use rusqlite::Connection;
-
-use auth::Auth;
-use config::Channel;
-use cmd;
 use state::ThreadState;
+use std;
+use std::default::Default;
+use std::io::Write;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
-pub fn init(state: &Arc<Mutex<ThreadState>>, chan_cfg: &Channel, owners: &[String], bot_user: &str, bot_pass: &str) {
+pub fn init(
+    state: &Arc<Mutex<ThreadState>>,
+    chan_cfg: &Channel,
+    owners: &[String],
+    bot_user: &str,
+    bot_pass: &str,
+) {
 
     // Set up IRC config
     let cfg = Config {
@@ -24,17 +31,16 @@ pub fn init(state: &Arc<Mutex<ThreadState>>, chan_cfg: &Channel, owners: &[Strin
         server: Some(String::from("irc.chat.twitch.tv")),
         port: Some(443),
         use_ssl: Some(true),
-        channels: Some(vec!(format!("#{}", chan_cfg.name.to_lowercase()))),
+        channels: Some(vec![format!("#{}", chan_cfg.name.to_lowercase())]),
         ..Default::default()
     };
 
     // Open log file
     let mut log_path = chan_cfg.dir.clone();
     log_path.push("log");
-    let log_file = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_path);
+    let log_file = std::fs::OpenOptions::new().create(true).append(true).open(
+        log_path,
+    );
     let mut log = match log_file {
         Ok(f) => f,
         Err(e) => panic!("Error: {}", e),
@@ -46,18 +52,25 @@ pub fn init(state: &Arc<Mutex<ThreadState>>, chan_cfg: &Channel, owners: &[Strin
     let db = Connection::open(db_path).unwrap();
 
     // Try to create tables
-    let _ = db.execute("CREATE TABLE quote (
+    let _ = db.execute(
+        "CREATE TABLE quote (
                         id       INTEGER PRIMARY KEY,
                         quote    TEXT NOT NULL
-                        )", &[]);
+                        )",
+        &[],
+    );
 
-    let _ = db.execute("CREATE TABLE alias (
+    let _ = db.execute(
+        "CREATE TABLE alias (
                         id         INTEGER PRIMARY KEY,
                         alias      TEXT NOT NULL,
                         command    TEXT NOT NULL
-                        )", &[]);
+                        )",
+        &[],
+    );
 
-    { // Add db to ThreadState
+    {
+        // Add db to ThreadState
         let mut state = state.lock().unwrap();
         state.db = Some(db);
     }
@@ -66,7 +79,8 @@ pub fn init(state: &Arc<Mutex<ThreadState>>, chan_cfg: &Channel, owners: &[Strin
     let mut cmd_list = cmd::CmdList::new();
     let mut send_buffer: SpscRb<Option<Instant>> = SpscRb::new(100);
 
-    loop { // Start loop to handle twitch RECONNECTs
+    loop {
+        // Start loop to handle twitch RECONNECTs
         let s = IrcClient::from_config(cfg.clone()).unwrap();
         let s = match s.identify() {
             Ok(_) => s,
@@ -89,7 +103,11 @@ pub fn init(state: &Arc<Mutex<ThreadState>>, chan_cfg: &Channel, owners: &[Strin
             let _ = log.write_all(log_msg.as_bytes());
 
             // Parse
-            let Message { command, tags, prefix } = msg;
+            let Message {
+                command,
+                tags,
+                prefix,
+            } = msg;
             match command {
                 Command::PING(_, None) => s.send("PONG :tmi.twitch.tv").unwrap(),
                 Command::PRIVMSG(chan, mut cmd) => {
@@ -98,13 +116,13 @@ pub fn init(state: &Arc<Mutex<ThreadState>>, chan_cfg: &Channel, owners: &[Strin
                         let msgv = cmd_list.exec(state, &context, &cmd);
                         send_msg(&s, &mut send_buffer, &chan, msgv);
                     }
-                },
+                }
                 Command::Raw(cmd, ..) => {
                     if cmd == "RECONNECT" {
                         let _ = s.send_quit("");
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             };
         }).unwrap();
     }
@@ -119,7 +137,12 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(channel: &str, tags: Option<Vec<Tag>>, prefix: Option<String>, owners: &[String]) -> Self {
+    pub fn new(
+        channel: &str,
+        tags: Option<Vec<Tag>>,
+        prefix: Option<String>,
+        owners: &[String],
+    ) -> Self {
         let sender = Self::user_from_prefix(&prefix);
         let auth = Self::eval_auth(&tags, &sender, owners);
         Self {
@@ -133,11 +156,11 @@ impl Context {
 
     pub fn get_sender_display(&self) -> Option<String> {
         if let Some(tags) = &self.tags {
-            for Tag(key,val) in tags {
+            for Tag(key, val) in tags {
                 if key == "display-name" {
                     if let Some(val) = val {
                         let display_name = val.clone();
-                        return Some(display_name)
+                        return Some(display_name);
                     }
                 }
             }
@@ -156,7 +179,11 @@ impl Context {
     fn eval_auth(tags: &Option<Vec<Tag>>, sender: &str, owners: &[String]) -> Auth {
         if let Some(tags) = tags {
             // Check if user is an owner
-            for owner in owners { if sender == owner.as_str() { return Auth::Owner } }
+            for owner in owners {
+                if sender == owner.as_str() {
+                    return Auth::Owner;
+                }
+            }
 
             // Otherwise get their auth from tags
             for Tag(key, val) in tags {
@@ -192,19 +219,28 @@ fn log_format(s: &str) -> String {
     }
 }
 
-fn send_msg(s: &IrcClient, send_buffer: &mut SpscRb<Option<Instant>>, chan:&str, msgv: Option<Vec<String>>) {
+fn send_msg(
+    s: &IrcClient,
+    send_buffer: &mut SpscRb<Option<Instant>>,
+    chan: &str,
+    msgv: Option<Vec<String>>,
+) {
     if let Some(msgv) = msgv {
         let (prod, cons) = (send_buffer.producer(), send_buffer.consumer());
 
         let mut purge_count = 0;
-        let mut buffer = [None;100];
+        let mut buffer = [None; 100];
         if cons.get(&mut buffer).is_ok() {
             for inst in buffer.into_iter() {
                 if let Some(inst) = inst {
                     if inst.elapsed().as_secs() >= 30 {
                         purge_count += 1;
-                    } else { break; }
-                } else { break; }
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
             }
         }
         if purge_count == 100 {

@@ -5,17 +5,17 @@ pub enum Auth {
     Streamer,
     Mod,
     Subscriber,
-    Viewer
+    Viewer,
 }
 
 impl Auth {
     fn as_u8(&self) -> u8 {
         match self {
-            Auth::Owner      => 4,
-            Auth::Streamer   => 3,
-            Auth::Mod        => 2,
+            Auth::Owner => 4,
+            Auth::Streamer => 3,
+            Auth::Mod => 2,
             Auth::Subscriber => 1,
-            _                => 0,
+            _ => 0,
         }
     }
 }

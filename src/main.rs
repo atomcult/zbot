@@ -2,7 +2,8 @@
 
 extern crate irc;
 extern crate toml;
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 extern crate rb;
 extern crate rusqlite;
 extern crate rand;
@@ -14,9 +15,9 @@ mod cmd;
 mod state;
 mod twitch;
 
-use std::thread;
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::thread;
 
 fn main() {
     // TODO: Add cli parsing
@@ -44,7 +45,10 @@ fn main() {
     let mut cfg_file = cfg_path.clone();
     cfg_file.push("config.toml");
     if !cfg_file.exists() {
-        println!("Config file `{}` does not exist.", cfg_file.to_str().unwrap());
+        println!(
+            "Config file `{}` does not exist.",
+            cfg_file.to_str().unwrap()
+        );
         std::process::exit(1);
     }
 
@@ -67,9 +71,12 @@ fn main() {
     }
 
     loop {
-        { // Lock state and check for shutdown
+        {
+            // Lock state and check for shutdown
             let state = state.lock().unwrap();
-            if state.shutdown { std::process::exit(0) }
+            if state.shutdown {
+                std::process::exit(0)
+            }
         } // Unlock state
         thread::sleep(std::time::Duration::from_secs(1));
     }

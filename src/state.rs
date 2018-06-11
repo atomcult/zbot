@@ -1,5 +1,5 @@
-use std::sync::{Arc,Mutex};
 use rusqlite::Connection;
+use std::sync::{Arc, Mutex};
 
 pub struct MainState {
     pub shutdown: bool,
@@ -7,9 +7,7 @@ pub struct MainState {
 
 impl MainState {
     pub fn new() -> Arc<Mutex<Self>> {
-        let state = MainState {
-            shutdown: false,
-        };
+        let state = MainState { shutdown: false };
         Arc::new(Mutex::new(state))
     }
 }

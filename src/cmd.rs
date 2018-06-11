@@ -1,14 +1,15 @@
-use std::time::Duration;
-use std::collections::HashMap;
-use std::sync::{Arc,Mutex};
-use rusqlite::Connection;
-use rand::prelude::*;
-use rand::distributions::Uniform;
-use regex::Regex;
+
 
 use auth::Auth;
-use twitch::Context;
+use rand::distributions::Uniform;
+use rand::prelude::*;
+use regex::Regex;
+use rusqlite::Connection;
 use state::ThreadState;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use twitch::Context;
 
 pub struct CmdList {
     commands: HashMap<&'static str, Cmd>,
@@ -31,12 +32,15 @@ impl CmdList {
         commands.insert("version", version());
         commands.insert("shutdown", shutdown());
 
-        Self {
-            commands,
-        }
+        Self { commands }
     }
 
-    pub fn exec(&mut self, state: Arc<Mutex<ThreadState>>, context: &Context, command: &str) -> Option<Vec<String>> {
+    pub fn exec(
+        &mut self,
+        state: Arc<Mutex<ThreadState>>,
+        context: &Context,
+        command: &str,
+    ) -> Option<Vec<String>> {
         let (cmd, args) = pop_cmd(command);
         if cmd == "alias" {
             if context.auth >= Auth::Mod {
@@ -48,18 +52,25 @@ impl CmdList {
                         if let Some(command) = command {
                             // If alias is the same as a command name, do not add the alias
                             if self.commands.get(alias.as_str()).is_some() {
-                                let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
+                                let msgv = Some(vec![
+                                    format!(
+                                        "Cannot alias `{}`. Command with the same name exists already.",
+                                        alias
+                                    ),
+                                ]);
                                 return msgv;
                             }
                             add_alias(&db, &alias, &command);
                         }
                     }
-                    return None
+                    return None;
                 } else {
-                    let msgv = Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")));
+                    let msgv = Some(vec![String::from("Usage: !alias <alias> <cmd> [args...]")]);
                     return msgv;
                 }
-            } else { None }
+            } else {
+                None
+            }
         } else {
             let mut msgv = None;
 
@@ -74,30 +85,40 @@ impl CmdList {
 
             // Search for command and exec
             if let Some(c) = self.commands.get(&cmd.as_str()) {
-                if context.auth >= c.auth { msgv = c.exec(state, &context, args); }
+                if context.auth >= c.auth {
+                    msgv = c.exec(state, &context, args);
+                }
             }
             // Else search for alias and exec
             else if let Some(alias_cmd) = alias_cmd {
                 let (c, args) = pop_cmd(&alias_cmd);
                 if let Some(c) = self.commands.get(c.as_str()) {
-                    if context.auth >= c.auth { msgv = c.exec(state, &context, args); }
+                    if context.auth >= c.auth {
+                        msgv = c.exec(state, &context, args);
+                    }
                 }
             }
             msgv
         }
     }
-
-
 }
 
 pub struct Cmd {
-    func: fn(t_state: Arc<Mutex<ThreadState>>, context: &Context, Option<String>) -> Option<Vec<String>>,
+    func: fn(t_state: Arc<Mutex<ThreadState>>,
+             context: &Context,
+             Option<String>)
+             -> Option<Vec<String>>,
     pub bucket: Option<Bucket>,
     pub auth: Auth,
 }
 
 impl Cmd {
-    pub fn exec(&self, t_state: Arc<Mutex<ThreadState>>, context: &Context, args: Option<String>) -> Option<Vec<String>> {
+    pub fn exec(
+        &self,
+        t_state: Arc<Mutex<ThreadState>>,
+        context: &Context,
+        args: Option<String>,
+    ) -> Option<Vec<String>> {
         (self.func)(t_state, context, args)
     }
 }
@@ -114,10 +135,10 @@ pub struct Bucket {
 
 fn say() -> Cmd {
     Cmd {
-        func: |_, _, args| {
-            if let Some(args) = args {
-                Some(vec!(args))
-            } else { None }
+        func: |_, _, args| if let Some(args) = args {
+            Some(vec![args])
+        } else {
+            None
         },
         bucket: None,
         auth: Auth::Mod,
@@ -126,19 +147,19 @@ fn say() -> Cmd {
 
 fn count() -> Cmd {
     Cmd {
-        func: |_, _, args| {
-            if let Some(args) = args {
-                match args.parse::<u32>() {
-                    Ok(u) => {
-                        let mut v = Vec::new();
-                        for i in 0..u {
-                            v.push(format!("{}", i));
-                        }
-                        Some(v)
-                    },
-                    Err(_) => None,
+        func: |_, _, args| if let Some(args) = args {
+            match args.parse::<u32>() {
+                Ok(u) => {
+                    let mut v = Vec::new();
+                    for i in 0..u {
+                        v.push(format!("{}", i));
+                    }
+                    Some(v)
                 }
-            } else { None }
+                Err(_) => None,
+            }
+        } else {
+            None
         },
         bucket: None,
         auth: Auth::Owner,
@@ -147,68 +168,68 @@ fn count() -> Cmd {
 
 fn thicc() -> Cmd {
     Cmd {
-        func: |_, _, args| {
-            if let Some(arg) = args {
-                let mut response = String::new();
-                for letter in arg.chars() {
-                    response.push(match letter {
-                        'a' => '卂',
-                        'b' => '乃',
-                        'c' => '匚',
-                        'd' => '刀',
-                        'e' => '乇',
-                        'f' => '下',
-                        'g' => '厶',
-                        'h' => '卄',
-                        'i' => '工',
-                        'j' => '丁',
-                        'k' => '长',
-                        'l' => '乚',
-                        'm' => '从',
-                        'n' => '𠘨',
-                        'o' => '口',
-                        'p' => '尸',
-                        'q' => '㔿',
-                        'r' => '尺',
-                        's' => '丂',
-                        't' => '丅',
-                        'u' => '凵',
-                        'v' => 'リ',
-                        'w' => '山',
-                        'x' => '乂',
-                        'y' => '丫',
-                        'z' => '乙',
-                        'A' => '卂',
-                        'B' => '乃',
-                        'C' => '匚',
-                        'D' => '刀',
-                        'E' => '乇',
-                        'F' => '下',
-                        'G' => '厶',
-                        'H' => '卄',
-                        'I' => '工',
-                        'J' => '丁',
-                        'K' => '长',
-                        'L' => '乚',
-                        'M' => '从',
-                        'N' => '𠘨',
-                        'O' => '口',
-                        'P' => '尸',
-                        'Q' => '㔿',
-                        'R' => '尺',
-                        'S' => '丂',
-                        'T' => '丅',
-                        'U' => '凵',
-                        'V' => 'リ',
-                        'W' => '山',
-                        'X' => '乂',
-                        'Y' => '丫',
-                        'Z' => '乙',
-                        x => x,
-                    });
-                }
-                Some(vec!(response))
-            } else { None }
+        func: |_, _, args| if let Some(arg) = args {
+            let mut response = String::new();
+            for letter in arg.chars() {
+                response.push(match letter {
+                    'a' => '卂',
+                    'b' => '乃',
+                    'c' => '匚',
+                    'd' => '刀',
+                    'e' => '乇',
+                    'f' => '下',
+                    'g' => '厶',
+                    'h' => '卄',
+                    'i' => '工',
+                    'j' => '丁',
+                    'k' => '长',
+                    'l' => '乚',
+                    'm' => '从',
+                    'n' => '𠘨',
+                    'o' => '口',
+                    'p' => '尸',
+                    'q' => '㔿',
+                    'r' => '尺',
+                    's' => '丂',
+                    't' => '丅',
+                    'u' => '凵',
+                    'v' => 'リ',
+                    'w' => '山',
+                    'x' => '乂',
+                    'y' => '丫',
+                    'z' => '乙',
+                    'A' => '卂',
+                    'B' => '乃',
+                    'C' => '匚',
+                    'D' => '刀',
+                    'E' => '乇',
+                    'F' => '下',
+                    'G' => '厶',
+                    'H' => '卄',
+                    'I' => '工',
+                    'J' => '丁',
+                    'K' => '长',
+                    'L' => '乚',
+                    'M' => '从',
+                    'N' => '𠘨',
+                    'O' => '口',
+                    'P' => '尸',
+                    'Q' => '㔿',
+                    'R' => '尺',
+                    'S' => '丂',
+                    'T' => '丅',
+                    'U' => '凵',
+                    'V' => 'リ',
+                    'W' => '山',
+                    'X' => '乂',
+                    'Y' => '丫',
+                    'Z' => '乙',
+                    x => x,
+                });
+            }
+            Some(vec![response])
+        } else {
+            None
         },
         bucket: None,
         auth: Auth::Viewer,
@@ -219,22 +240,24 @@ fn eightball() -> Cmd {
     Cmd {
         func: |_, _, _| {
             let mut rng = thread_rng();
-            let answers = vec!("It is certain.",
-                               "It is decidedly so.",
-                               "Without a doubt.",
-                               "Yes, definitely.",
-                               "You may rely on it.",
-                               "As I see it, yes.",
-                               "Most likely.",
-                               "Outlook good.",
-                               "Yes.",
-                               "Signs point to yes.",
-                               "Don't count on it.",
-                               "My reply is no.",
-                               "My sources say no.",
-                               "Outlook not so good.",
-                               "Very doubtful.");
-            Some(vec!(String::from(answers[rng.gen_range(0,answers.len())])))
+            let answers = vec![
+                "It is certain.",
+                "It is decidedly so.",
+                "Without a doubt.",
+                "Yes, definitely.",
+                "You may rely on it.",
+                "As I see it, yes.",
+                "Most likely.",
+                "Outlook good.",
+                "Yes.",
+                "Signs point to yes.",
+                "Don't count on it.",
+                "My reply is no.",
+                "My sources say no.",
+                "Outlook not so good.",
+                "Very doubtful.",
+            ];
+            Some(vec![String::from(answers[rng.gen_range(0, answers.len())])])
         },
         bucket: None,
         auth: Auth::Viewer,
@@ -243,27 +266,25 @@ fn eightball() -> Cmd {
 
 fn coinflip() -> Cmd {
     Cmd {
-        func: |_, _, args| {
-            if let Some(args) = args {
-                let iter = args.parse::<u8>();
-                if let Ok(iter) = iter {
-                    let mut r = String::new();
-                    for _ in 0..iter as usize {
-                        if random() {
-                            r.push('H');
-                        } else {
-                            r.push('T');
-                        }
+        func: |_, _, args| if let Some(args) = args {
+            let iter = args.parse::<u8>();
+            if let Ok(iter) = iter {
+                let mut r = String::new();
+                for _ in 0..iter as usize {
+                    if random() {
+                        r.push('H');
+                    } else {
+                        r.push('T');
                     }
-                    return Some(vec!(r));
-                } else {
-                    return None
                 }
-            } else if random() {
-                return Some(vec!(String::from("Heads")))
+                return Some(vec![r]);
             } else {
-                return Some(vec!(String::from("Tails")))
+                return None;
             }
+        } else if random() {
+            return Some(vec![String::from("Heads")]);
+        } else {
+            return Some(vec![String::from("Tails")]);
         },
         bucket: None,
         auth: Auth::Viewer,
@@ -300,7 +321,7 @@ fn roll() -> Cmd {
                         // If more than one iteration, create generator so that
                         // distribution is flat, and perform sum.
                         if num_rolls > 1 {
-                            let between = Uniform::from(1..(num_die_faces+1));
+                            let between = Uniform::from(1..(num_die_faces + 1));
                             for _ in 0..num_rolls {
                                 sum += sign * rng.sample(&between);
                             }
@@ -317,16 +338,16 @@ fn roll() -> Cmd {
                         return None;
                     }
                 }
-                Some(vec!(format!("{}", sum)))
+                Some(vec![format!("{}", sum)])
             } else {
-                let roll = rng.gen_range(1,20);
+                let roll = rng.gen_range(1, 20);
                 let mut roll_string = format!("{}", roll);
                 if roll_string == "20" {
                     roll_string.push_str(" PogChamp");
                 } else if roll_string == "1" {
                     roll_string.push_str(" NotLikeThis");
                 }
-                Some(vec!(roll_string))
+                Some(vec![roll_string])
             }
         },
         bucket: None,
@@ -348,10 +369,10 @@ fn tcount() -> Cmd {
             }
             hash += hash << 3;
             hash ^= hash >> 11;
-            hash += hash << 15; 
+            hash += hash << 15;
 
             let tcount = (hash % 101) as u8;
-            Some(vec!(format!("{}: {}/100", display, tcount)))
+            Some(vec![format!("{}: {}/100", display, tcount)])
         },
         bucket: None,
         auth: Auth::Viewer,
@@ -363,15 +384,19 @@ fn quote() -> Cmd {
         func: |t_state, _, _| {
             let t_state = t_state.lock().unwrap();
             if let Some(db) = &t_state.db {
-                let quote = db.query_row("SELECT * FROM quote ORDER BY RANDOM() LIMIT 1;", &[], |row| {
-                    let id: u32 = row.get(0);
-                    let q: String = row.get(1);
-                    format!("[{}] {}", id, q)
-                });
+                let quote = db.query_row(
+                    "SELECT * FROM quote ORDER BY RANDOM() LIMIT 1;",
+                    &[],
+                    |row| {
+                        let id: u32 = row.get(0);
+                        let q: String = row.get(1);
+                        format!("[{}] {}", id, q)
+                    },
+                );
                 if let Ok(quote) = quote {
                     let mut v = Vec::new();
                     v.push(quote);
-                    return Some(v)
+                    return Some(v);
                 }
             }
             None
@@ -387,8 +412,8 @@ fn quoteadd() -> Cmd {
             if let Some(args) = args {
                 let t_state = t_state.lock().unwrap();
                 if let Some(db) = &t_state.db {
-                    db.execute("INSERT INTO quote (quote) values (?1)",
-                    &[&args]).unwrap();
+                    db.execute("INSERT INTO quote (quote) values (?1)", &[&args])
+                        .unwrap();
                 }
             }
             None
@@ -436,7 +461,7 @@ fn version() -> Cmd {
     Cmd {
         func: |_, _, _| {
             let v = env!("GIT_VERSION");
-            Some(vec!(String::from(v)))
+            Some(vec![String::from(v)])
         },
         bucket: None,
         auth: Auth::Owner,
@@ -465,16 +490,15 @@ fn rm_alias(db: &Connection, alias: &str) {
 }
 
 fn add_alias(db: &Connection, alias: &str, cmd: &str) {
-    let _ = db.execute("INSERT INTO alias (alias, command) VALUES (?1, ?2)", &[&alias, &cmd]);
+    let _ = db.execute(
+        "INSERT INTO alias (alias, command) VALUES (?1, ?2)",
+        &[&alias, &cmd],
+    );
 }
 
 fn get_alias(db: &Connection, alias: &str) -> Option<String> {
     let cmd = db.query_row("SELECT * FROM alias WHERE alias=?1", &[&alias], |row| {
         row.get(2)
     });
-    if let Ok(cmd) = cmd {
-        Some(cmd)
-    } else {
-        None
-    }
+    if let Ok(cmd) = cmd { Some(cmd) } else { None }
 }
