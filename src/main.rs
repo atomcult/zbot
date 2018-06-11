@@ -48,11 +48,11 @@ fn main() {
         std::process::exit(1);
     }
 
-    let cfg = config::Config::open(cfg_file);
+    let cfg = config::Config::open(&cfg_file);
     let state = state::MainState::new();
 
     let mut threads = Vec::new();
-    for (_, channel) in &cfg.channels {
+    for channel in cfg.channels.values() {
         // Create local copies of variables
         let user = cfg.user.clone();
         let pass = cfg.pass.clone();
@@ -61,8 +61,8 @@ fn main() {
         let t_state = state::ThreadState::new(Arc::clone(&state));
 
         // Spawn thread
-        threads.push(thread::spawn(|| {
-            twitch::init(t_state, channel, owners, user, pass);
+        threads.push(thread::spawn(move || {
+            twitch::init(&t_state, &channel, &owners, &user, &pass);
         }));
     }
 

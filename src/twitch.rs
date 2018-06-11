@@ -14,13 +14,13 @@ use config::Channel;
 use cmd;
 use state::ThreadState;
 
-pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<String>, bot_user: String, bot_pass: String) {
+pub fn init(state: &Arc<Mutex<ThreadState>>, chan_cfg: &Channel, owners: &[String], bot_user: &str, bot_pass: &str) {
 
     // Set up IRC config
     let cfg = Config {
-        owners: Some(owners.clone()),
-        nickname: Some(bot_user.clone()),
-        password: Some(bot_pass.clone()),
+        owners: Some(owners.to_owned()),
+        nickname: Some(bot_user.to_string()),
+        password: Some(bot_pass.to_string()),
         server: Some(String::from("irc.chat.twitch.tv")),
         port: Some(443),
         use_ssl: Some(true),
@@ -84,7 +84,7 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
             let state = Arc::clone(&state);
 
             // Log the message
-            let log_msg = log_format(msg.to_string());
+            let log_msg = log_format(&msg.to_string());
             print!("{}", log_msg);
             let _ = log.write_all(log_msg.as_bytes());
 
@@ -95,13 +95,13 @@ pub fn init(state: Arc<Mutex<ThreadState>>, chan_cfg: Channel, owners: Vec<Strin
                 Command::PRIVMSG(chan, mut cmd) => {
                     if cmd.remove(0) == chan_cfg.cmd_prefix {
                         let context = Context::new(&chan_cfg.name, tags, prefix, &owners);
-                        let msgv = cmd_list.exec(state, context, &cmd);
+                        let msgv = cmd_list.exec(state, &context, &cmd);
                         send_msg(&s, &mut send_buffer, &chan, msgv);
                     }
                 },
                 Command::Raw(cmd, ..) => {
                     if cmd == "RECONNECT" {
-                        &s.send_quit("");
+                        let _ = s.send_quit("");
                     }
                 },
                 _ => {},
@@ -156,7 +156,7 @@ impl Context {
     fn eval_auth(tags: &Option<Vec<Tag>>, sender: &str, owners: &[String]) -> Auth {
         if let Some(tags) = tags {
             // Check if user is an owner
-            for owner in owners.into_iter() { if sender == owner.as_str() { return Auth::Owner } }
+            for owner in owners { if sender == owner.as_str() { return Auth::Owner } }
 
             // Otherwise get their auth from tags
             for Tag(key, val) in tags {
@@ -183,7 +183,7 @@ fn chanmsg(s: &IrcClient, chan: &str, msg: &str) -> std::result::Result<(), IrcE
     s.send_privmsg(chan, msg)
 }
 
-fn log_format(s: String) -> String {
+fn log_format(s: &str) -> String {
     use std::time::SystemTime;
     if let Ok(time) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
         format!("[{}] {}", time.as_secs(), s)
@@ -198,7 +198,7 @@ fn send_msg(s: &IrcClient, send_buffer: &mut SpscRb<Option<Instant>>, chan:&str,
 
         let mut purge_count = 0;
         let mut buffer = [None;100];
-        if let Ok(_) = cons.get(&mut buffer) {
+        if cons.get(&mut buffer).is_ok() {
             for inst in buffer.into_iter() {
                 if let Some(inst) = inst {
                     if inst.elapsed().as_secs() >= 30 {

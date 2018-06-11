@@ -14,7 +14,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn open(path: PathBuf) -> Config {
+    pub fn open(path: &PathBuf) -> Config {
         // Open config.toml
         let mut file = File::open(&path).unwrap_or_else( |_| {
             if let Ok(dir) = env::current_dir() {
@@ -34,7 +34,7 @@ impl Config {
         // FIXME: Surely there's a better way to do this
         // Recreate each channel with config dir
         let mut channels = HashMap::new();
-        for (_, mut chan) in &cfg.channels {
+        for mut chan in cfg.channels.values() {
             let mut path = PathBuf::from(path.parent().unwrap());
             path.push(format!("data/{}", chan.name.to_lowercase()));
             if !path.exists() {

@@ -36,18 +36,18 @@ impl CmdList {
         }
     }
 
-    pub fn exec(&mut self, state: Arc<Mutex<ThreadState>>, context: Context, command: &str) -> Option<Vec<String>> {
-        let (cmd, args) = pop_cmd(command.to_string());
+    pub fn exec(&mut self, state: Arc<Mutex<ThreadState>>, context: &Context, command: &str) -> Option<Vec<String>> {
+        let (cmd, args) = pop_cmd(command);
         if cmd == "alias" {
             if context.auth >= Auth::Mod {
                 if let Some(args) = args {
-                    let (alias, command) = pop_cmd(args);
+                    let (alias, command) = pop_cmd(&args);
                     let state = state.lock().unwrap();
                     if let Some(db) = &state.db {
                         rm_alias(&db, &alias);
                         if let Some(command) = command {
                             // If alias is the same as a command name, do not add the alias
-                            if let Some(_) = self.commands.get(alias.as_str()){
+                            if self.commands.get(alias.as_str()).is_some() {
                                 let msgv = Some(vec!(format!("Cannot alias `{}`. Command with the same name exists already.", alias)));
                                 return msgv;
                             }
@@ -59,7 +59,7 @@ impl CmdList {
                     let msgv = Some(vec!(String::from("Usage: !alias <alias> <cmd> [args...]")));
                     return msgv;
                 }
-            } else { return None; }
+            } else { None }
         } else {
             let mut msgv = None;
 
@@ -78,12 +78,12 @@ impl CmdList {
             }
             // Else search for alias and exec
             else if let Some(alias_cmd) = alias_cmd {
-                let (c, args) = pop_cmd(alias_cmd.clone());
+                let (c, args) = pop_cmd(&alias_cmd);
                 if let Some(c) = self.commands.get(c.as_str()) {
                     if context.auth >= c.auth { msgv = c.exec(state, &context, args); }
                 }
             }
-            return msgv;
+            msgv
         }
     }
 
@@ -259,12 +259,10 @@ fn coinflip() -> Cmd {
                 } else {
                     return None
                 }
+            } else if random() {
+                return Some(vec!(String::from("Heads")))
             } else {
-                if random() {
-                    return Some(vec!(String::from("Heads")))
-                } else {
-                    return Some(vec!(String::from("Tails")))
-                }
+                return Some(vec!(String::from("Tails")))
             }
         },
         bucket: None,
@@ -344,9 +342,9 @@ fn tcount() -> Cmd {
             // hash username
             let mut hash: u64 = 0;
             for b in sender.as_bytes() {
-                hash += *b as u64;
-                hash += (b << 10) as u64;
-                hash ^= (b >> 6) as u64;
+                hash += u64::from(*b);
+                hash += u64::from(b << 10);
+                hash ^= u64::from(b >> 6);
             }
             hash += hash << 3;
             hash ^= hash >> 11;
@@ -451,9 +449,9 @@ fn version() -> Cmd {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-fn pop_cmd(s: String) -> (String, Option<String>) {
+fn pop_cmd(s: &str) -> (String, Option<String>) {
     let s = String::from(s.trim_left());
-    let argv: Vec<&str> = s.splitn(2, " ").collect();
+    let argv: Vec<&str> = s.splitn(2, ' ').collect();
 
     if argv.len() == 2 {
         (argv[0].to_string(), Some(argv[1].trim().to_string()))
