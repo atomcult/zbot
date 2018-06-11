@@ -1,0 +1,6 @@
+[clog]
+repository      = "https://gitgud.io/zxv/zbot"
+link-style      = "gitlab"
+changelog       = "changelog.md"
+output-format   = "markdown"
+from-latest-tag = true
