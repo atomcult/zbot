@@ -24,6 +24,7 @@ impl CmdList {
         commands.insert("quoterm", quoterm());
         commands.insert("say", say());
         commands.insert("thicc", thicc());
+        commands.insert("tiny", tinytext());
         commands.insert("8ball", eightball());
         commands.insert("flipcoin", coinflip());
         commands.insert("tcount", tcount());
@@ -224,6 +225,76 @@ fn thicc() -> Cmd {
                     'X' => '乂',
                     'Y' => '丫',
                     'Z' => '乙',
+                    x => x,
+                });
+            }
+            Some(vec![response])
+        } else {
+            None
+        },
+        bucket: None,
+        auth: Auth::Viewer,
+    }
+}
+
+fn tinytext() -> Cmd {
+    Cmd {
+        func: |_, _, args| if let Some(arg) = args {
+            let mut response = String::new();
+            for letter in arg.chars() {
+                response.push(match letter {
+                    'a' => 'ᵃ',
+                    'b' => 'ᵇ',
+                    'c' => 'ᶜ',
+                    'd' => 'ᵈ',
+                    'e' => 'ᵉ',
+                    'f' => 'ᶠ',
+                    'g' => 'ᵍ',
+                    'h' => 'ʰ',
+                    'i' => 'ᶦ',
+                    'j' => 'ʲ',
+                    'k' => 'ᵏ',
+                    'l' => 'ˡ',
+                    'm' => 'ᵐ',
+                    'n' => 'ⁿ',
+                    'o' => 'ᵒ',
+                    'p' => 'ᵖ',
+                    'q' => 'ᑫ',
+                    'r' => 'ʳ',
+                    's' => 'ˢ',
+                    't' => 'ᵗ',
+                    'u' => 'ᵘ',
+                    'v' => 'ᵛ',
+                    'w' => 'ʷ',
+                    'x' => 'ˣ',
+                    'y' => 'ʸ',
+                    'z' => 'ᶻ',
+                    'A' => 'ᴬ',
+                    'B' => 'ᴮ',
+                    'C' => 'ᶜ',
+                    'D' => 'ᴰ',
+                    'E' => 'ᴱ',
+                    'F' => 'ᶠ',
+                    'G' => 'ᴳ',
+                    'H' => 'ᴴ',
+                    'I' => 'ᴵ',
+                    'J' => 'ᴶ',
+                    'K' => 'ᴷ',
+                    'L' => 'ᴸ',
+                    'M' => 'ᴹ',
+                    'N' => 'ᴺ',
+                    'O' => 'ᴼ',
+                    'P' => 'ᴾ',
+                    'Q' => 'Q',
+                    'R' => 'ᴿ',
+                    'S' => 'ˢ',
+                    'T' => 'ᵀ',
+                    'U' => 'ᵁ',
+                    'V' => 'ⱽ',
+                    'W' => 'ᵂ',
+                    'X' => 'ˣ',
+                    'Y' => 'ʸ',
+                    'Z' => 'ᶻ',
                     x => x,
                 });
             }
