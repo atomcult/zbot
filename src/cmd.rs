@@ -25,6 +25,7 @@ impl CmdList {
         commands.insert("say", say());
         commands.insert("thicc", thicc());
         commands.insert("tiny", tinytext());
+        commands.insert("smol", smallcaps());
         commands.insert("8ball", eightball());
         commands.insert("flipcoin", coinflip());
         commands.insert("tcount", tcount());
@@ -295,6 +296,76 @@ fn tinytext() -> Cmd {
                     'X' => 'ˣ',
                     'Y' => 'ʸ',
                     'Z' => 'ᶻ',
+                    x => x,
+                });
+            }
+            Some(vec![response])
+        } else {
+            None
+        },
+        bucket: None,
+        auth: Auth::Viewer,
+    }
+}
+
+fn smallcaps() -> Cmd {
+    Cmd {
+        func: |_, _, args| if let Some(arg) = args {
+            let mut response = String::new();
+            for letter in arg.chars() {
+                response.push(match letter {
+                    'a' => 'ᴀ',
+                    'b' => 'ʙ',
+                    'c' => 'ᴄ',
+                    'd' => 'ᴅ',
+                    'e' => 'ᴇ',
+                    'f' => 'ғ',
+                    'g' => 'ɢ',
+                    'h' => 'ʜ',
+                    'i' => 'ɪ',
+                    'j' => 'ᴊ',
+                    'k' => 'ᴋ',
+                    'l' => 'ʟ',
+                    'm' => 'ᴍ',
+                    'n' => 'ɴ',
+                    'o' => 'ᴏ',
+                    'p' => 'ᴘ',
+                    'q' => 'ǫ',
+                    'r' => 'ʀ',
+                    's' => 's',
+                    't' => 'ᴛ',
+                    'u' => 'ᴜ',
+                    'v' => 'ᴠ',
+                    'w' => 'ᴡ',
+                    'x' => 'x',
+                    'y' => 'ʏ',
+                    'z' => 'ᴢ',
+                    'A' => 'A',
+                    'B' => 'B',
+                    'C' => 'C',
+                    'D' => 'D',
+                    'E' => 'E',
+                    'F' => 'F',
+                    'G' => 'G',
+                    'H' => 'H',
+                    'I' => 'I',
+                    'J' => 'J',
+                    'K' => 'K',
+                    'L' => 'L',
+                    'M' => 'M',
+                    'N' => 'N',
+                    'O' => 'O',
+                    'P' => 'P',
+                    'Q' => 'Q',
+                    'R' => 'R',
+                    'S' => 'S',
+                    'T' => 'T',
+                    'U' => 'U',
+                    'V' => 'V',
+                    'W' => 'W',
+                    'X' => 'X',
+                    'Y' => 'Y',
+                    'Z' => 'Z',
                     x => x,
                 });
             }
