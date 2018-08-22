@@ -1,5 +1,3 @@
-#![feature(assoc_unix_epoch)]
-
 extern crate irc;
 extern crate toml;
 #[macro_use]
