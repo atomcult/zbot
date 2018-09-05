@@ -52,17 +52,10 @@ impl CmdList {
                     if let Some(db) = &state.db {
                         rm_alias(&db, &alias);
                         if let Some(command) = command {
-                            // If alias is the same as a command name, do not add the alias
-                            if self.commands.get(alias.as_str()).is_some() {
-                                let msgv = Some(vec![
-                                    format!(
-                                        "Cannot alias `{}`. Command with the same name exists already.",
-                                        alias
-                                    ),
-                                ]);
-                                return msgv;
+                            let (cmd, _) = pop_cmd(&command);
+                            if let Some(cmd) = self.commands.get(cmd.as_str()) {
+                                add_alias(&db, &alias, &cmd.auth, &command);
                             }
-                            add_alias(&db, &alias, &command);
                         }
                     }
                     return None;
@@ -77,27 +70,27 @@ impl CmdList {
             let mut msgv = None;
 
             // Search for alias
-            let mut alias_cmd = None;
+            let mut alias_res = None;
             {
                 let state = state.lock().unwrap();
                 if let Some(db) = &state.db {
-                    alias_cmd = get_alias(&db, &cmd);
+                    alias_res = get_alias(&db, &cmd);
                 }
             }
 
-            // Search for command and exec
-            if let Some(c) = self.commands.get(&cmd.as_str()) {
-                if context.auth.intersects(c.auth) {
-                    msgv = c.exec(state, &context, args);
-                }
-            }
-            // Else search for alias and exec
-            else if let Some(alias_cmd) = alias_cmd {
+            // Search for alias and exec
+            if let Some((alias_auth, alias_cmd)) = alias_res {
                 let (c, args) = pop_cmd(&alias_cmd);
                 if let Some(c) = self.commands.get(c.as_str()) {
-                    if context.auth.intersects(c.auth) {
+                    if context.auth.intersects(alias_auth) {
                         msgv = c.exec(state, &context, args);
                     }
+                }
+            }
+            // Else search for command and exec
+            else if let Some(c) = self.commands.get(&cmd.as_str()) {
+                if context.auth.intersects(c.auth) {
+                    msgv = c.exec(state, &context, args);
                 }
             }
             msgv
@@ -631,16 +624,22 @@ fn rm_alias(db: &Connection, alias: &str) {
     let _ = db.execute("DELETE FROM alias WHERE alias=?1", &[&alias]);
 }
 
-fn add_alias(db: &Connection, alias: &str, cmd: &str) {
+fn add_alias(db: &Connection, alias: &str, auth: &Permissions, cmd: &str) {
     let _ = db.execute(
-        "INSERT INTO alias (alias, command) VALUES (?1, ?2)",
-        &[&alias, &cmd],
+        "INSERT INTO alias (auth, alias, command) VALUES (?1, ?2, ?3)",
+        &[&auth.bits(), &alias, &cmd],
     );
 }
 
-fn get_alias(db: &Connection, alias: &str) -> Option<String> {
-    let cmd = db.query_row("SELECT * FROM alias WHERE alias=?1", &[&alias], |row| {
-        row.get(2)
-    });
-    if let Ok(cmd) = cmd { Some(cmd) } else { None }
+fn get_alias(db: &Connection, alias: &str) -> Option<(Permissions, String)> {
+    if let Ok((auth, cmd)) = db.query_row("SELECT * FROM alias WHERE alias=?1", &[&alias], |row| {
+        let auth: u8 = row.get(2);
+        let cmd: String = row.get(3);
+        (auth, cmd)
+    }) {
+        let auth = Permissions::from_bits(auth).unwrap();
+        Some((auth, cmd))
+    } else {
+        None
+    }
 }

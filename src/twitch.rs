@@ -63,6 +63,7 @@ pub fn init(
     let _ = db.execute(
         "CREATE TABLE alias (
                         id         INTEGER PRIMARY KEY,
+                        auth       INTEGER NOT NULL,
                         alias      TEXT NOT NULL,
                         command    TEXT NOT NULL
                         )",
