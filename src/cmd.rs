@@ -1,6 +1,6 @@
 
 
-use auth::Auth;
+use auth::Permissions;
 use rand::distributions::Uniform;
 use rand::prelude::*;
 use regex::Regex;
@@ -45,7 +45,7 @@ impl CmdList {
     ) -> Option<Vec<String>> {
         let (cmd, args) = pop_cmd(command);
         if cmd == "alias" {
-            if context.auth >= Auth::Mod {
+            if context.auth.intersects(Permissions::Streamer | Permissions::Mod) {
                 if let Some(args) = args {
                     let (alias, command) = pop_cmd(&args);
                     let state = state.lock().unwrap();
@@ -87,7 +87,7 @@ impl CmdList {
 
             // Search for command and exec
             if let Some(c) = self.commands.get(&cmd.as_str()) {
-                if context.auth >= c.auth {
+                if context.auth.intersects(c.auth) {
                     msgv = c.exec(state, &context, args);
                 }
             }
@@ -95,7 +95,7 @@ impl CmdList {
             else if let Some(alias_cmd) = alias_cmd {
                 let (c, args) = pop_cmd(&alias_cmd);
                 if let Some(c) = self.commands.get(c.as_str()) {
-                    if context.auth >= c.auth {
+                    if context.auth.intersects(c.auth) {
                         msgv = c.exec(state, &context, args);
                     }
                 }
@@ -111,7 +111,7 @@ pub struct Cmd {
              Option<String>)
              -> Option<Vec<String>>,
     pub bucket: Option<Bucket>,
-    pub auth: Auth,
+    pub auth: Permissions,
 }
 
 impl Cmd {
@@ -143,7 +143,7 @@ fn say() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Mod,
+        auth: Permissions::Owner | Permissions::Mod,
     }
 }
 
@@ -164,7 +164,7 @@ fn count() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Owner,
+        auth: Permissions::Owner,
     }
 }
 
@@ -234,7 +234,7 @@ fn thicc() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -304,7 +304,7 @@ fn tinytext() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -374,7 +374,7 @@ fn smallcaps() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -402,7 +402,7 @@ fn eightball() -> Cmd {
             Some(vec![String::from(answers[rng.gen_range(0, answers.len())])])
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -429,7 +429,7 @@ fn coinflip() -> Cmd {
             return Some(vec![String::from("Tails")]);
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -493,7 +493,7 @@ fn roll() -> Cmd {
             }
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -517,7 +517,7 @@ fn tcount() -> Cmd {
             Some(vec![format!("{}: {}/100", display, tcount)])
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -544,7 +544,7 @@ fn quote() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Viewer,
+        auth: Permissions::Viewer,
     }
 }
 
@@ -561,7 +561,7 @@ fn quoteadd() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Mod,
+        auth: Permissions::Streamer | Permissions::Mod,
     }
 }
 
@@ -582,7 +582,7 @@ fn quoterm() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Mod,
+        auth: Permissions::Mod,
     }
 }
 
@@ -595,7 +595,7 @@ fn shutdown() -> Cmd {
             None
         },
         bucket: None,
-        auth: Auth::Owner,
+        auth: Permissions::Owner,
     }
 }
 
@@ -606,7 +606,7 @@ fn version() -> Cmd {
             Some(vec![String::from(v)])
         },
         bucket: None,
-        auth: Auth::Owner,
+        auth: Permissions::Owner,
     }
 }
 

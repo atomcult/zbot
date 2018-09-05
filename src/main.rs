@@ -2,6 +2,8 @@ extern crate irc;
 extern crate toml;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate bitflags;
 extern crate rb;
 extern crate rusqlite;
 extern crate rand;

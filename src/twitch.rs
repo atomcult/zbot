@@ -1,6 +1,6 @@
 
 
-use auth::Auth;
+use auth::Permissions;
 use cmd;
 use config::Channel;
 use irc::client::prelude::*;
@@ -131,7 +131,7 @@ pub fn init(
 pub struct Context {
     pub sender: String,
     pub channel: String,
-    pub auth: Auth,
+    pub auth: Permissions,
     pub tags: Option<Vec<Tag>>,
     pub prefix: Option<String>,
 }
@@ -176,12 +176,14 @@ impl Context {
         String::from(prefix[0])
     }
 
-    fn eval_auth(tags: &Option<Vec<Tag>>, sender: &str, owners: &[String]) -> Auth {
+    fn eval_auth(tags: &Option<Vec<Tag>>, sender: &str, owners: &[String]) -> Permissions {
+        let mut perms = Permissions::Viewer;
         if let Some(tags) = tags {
             // Check if user is an owner
             for owner in owners {
                 if sender == owner.as_str() {
-                    return Auth::Owner;
+                    perms.set(Permissions::Owner, true);
+                    break;
                 }
             }
 
@@ -190,18 +192,21 @@ impl Context {
                 if key == "badges" {
                     if let Some(val) = val {
                         if val.contains("broadcaster") {
-                            return Auth::Streamer;
-                        } else if val.contains("moderator") {
-                            return Auth::Mod;
-                        } else if val.contains("subscriber") {
-                            return Auth::Subscriber;
+                            perms.set(Permissions::Streamer, true);
+                        }
+                        if val.contains("moderator") {
+                            perms.set(Permissions::Mod, true);
+                        }
+                        if val.contains("subscriber") {
+                            perms.set(Permissions::Sub, true);
                         }
                     }
                     break;
                 }
             }
+
         }
-        Auth::Viewer
+        perms
     }
 }
 
