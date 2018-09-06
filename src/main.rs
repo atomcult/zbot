@@ -8,6 +8,7 @@ extern crate rb;
 extern crate rusqlite;
 extern crate rand;
 extern crate regex;
+extern crate dirs;
 
 mod auth;
 mod config;
@@ -28,7 +29,7 @@ fn main() {
     if let Ok(dir) = std::env::var("XDG_CONFIG_HOME") {
         cfg_path = PathBuf::from(dir);
     } else {
-        cfg_path = std::env::home_dir().unwrap();
+        cfg_path = dirs::home_dir().unwrap();
         cfg_path.push(".config");
     }
     cfg_path.push("zbot");
