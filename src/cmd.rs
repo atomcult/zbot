@@ -574,18 +574,35 @@ fn tcount() -> Cmd {
 
 fn quote() -> Cmd {
     Cmd {
-        func: |t_state, _, _| {
+        func: |t_state, _, args| {
             let t_state = t_state.lock().unwrap();
             if let Some(db) = &t_state.db {
-                let quote = db.query_row(
-                    "SELECT * FROM quote ORDER BY RANDOM() LIMIT 1;",
-                    &[],
-                    |row| {
-                        let id: u32 = row.get(0);
-                        let q: String = row.get(1);
-                        format!("[{}] {}", id, q)
-                    },
-                );
+                let mut quote;
+                if let Some(args) = args {
+                    if let Ok(i) = args.parse::<u32>() {
+                        quote = db.query_row(
+                            "SELECT * FROM quote WHERE id=?1;",
+                            &[&i],
+                            |row| {
+                                let id: u32 = row.get(0);
+                                let q: String = row.get(1);
+                                format!("[{}] {}", id, q)
+                            },
+                            );
+                    } else {
+                        return None
+                    }
+                } else {
+                    quote = db.query_row(
+                        "SELECT * FROM quote ORDER BY RANDOM() LIMIT 1;",
+                        &[],
+                        |row| {
+                            let id: u32 = row.get(0);
+                            let q: String = row.get(1);
+                            format!("[{}] {}", id, q)
+                        },
+                        );
+                }
                 if let Ok(quote) = quote {
                     let mut v = Vec::new();
                     v.push(quote);
