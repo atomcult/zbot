@@ -84,10 +84,24 @@ impl CmdList {
 
             // Search for alias and exec
             if let Some((alias_auth, alias_cmd)) = alias_res {
-                let (c, args) = pop_cmd(&alias_cmd);
+                let (c, mut alias_args) = pop_cmd(&alias_cmd);
+
+                if !alias_auth.contains(Permissions::ReadOnly) {
+                    if let Some(args) = args {
+                        alias_args = if alias_args.is_some() {
+                            let mut tmp_args = alias_args.unwrap();
+                            tmp_args.push(' ');
+                            tmp_args.push_str(&args);
+                            Some(tmp_args)
+                        } else {
+                            Some(args)
+                        };
+                    }
+                }
+
                 if let Some(c) = self.commands.get(c.as_str()) {
                     if context.auth.intersects(alias_auth) {
-                        msgv = c.exec(state, &context, args);
+                        msgv = c.exec(state, &context, alias_args);
                     }
                 }
             }
