@@ -52,19 +52,48 @@ impl CmdList {
                     let (alias, command) = pop_cmd(&args);
                     let state = state.lock().unwrap();
                     if let Some(db) = &state.db {
-                        rm_alias(&db, &alias);
-                        if let Some(command) = command {
+                        if let Some(mut command) = command {
+                            let mut auth_mod = String::new();
+                            while command.starts_with('+') || command.starts_with('-') {
+                                let (new_mod, new_cmd) = pop_cmd(&command);
+                                auth_mod.push_str(&new_mod);
+                                command = match new_cmd {
+                                    Some(cmd) => cmd,
+                                    None => return None,
+                                };
+                            }
+                            println!("auth_mod: {}", auth_mod);
+                            println!("command: {}", command);
                             let (cmd, _) = pop_cmd(&command);
                             if let Some(cmd) = self.commands.get(cmd.as_str()) {
                                 let mut auth = cmd.auth.clone();
                                 auth.set(Permissions::ReadOnly, true);
+                                let mut attr_val = true;
+                                let mut attr;
+                                for ch in auth_mod.chars() {
+                                    match ch {
+                                        '+' => { attr_val = true;  continue; },
+                                        '-' => { attr_val = false; continue; },
+                                        'r' => attr = Permissions::ReadOnly,
+                                        'o' => attr = Permissions::Owner,
+                                        'b' => attr = Permissions::Streamer,
+                                        'm' => attr = Permissions::Mod,
+                                        's' => attr = Permissions::Sub,
+                                        'v' => attr = Permissions::Viewer,
+                                        _ => continue,
+                                    }
+                                    auth.set(attr, attr_val);
+                                }
+                                rm_alias(&db, &alias);
                                 add_alias(&db, &alias, &auth, &command);
                             }
+                        } else {
+                            rm_alias(&db, &alias)
                         }
                     }
                     return None;
                 } else {
-                    let msgv = Some(vec![String::from("Usage: !alias <alias> <cmd> [args...]")]);
+                    let msgv = Some(vec![String::from("Usage: !alias <alias> [auth] <cmd> [args...]")]);
                     return msgv;
                 }
             } else {
