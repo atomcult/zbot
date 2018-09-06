@@ -19,6 +19,8 @@ impl CmdList {
     pub fn new() -> Self {
         let mut commands = HashMap::new();
 
+        commands.insert("aliasmod", mod_alias());
+
         commands.insert("quote", quote());
         commands.insert("quoteadd", quoteadd());
         commands.insert("quoterm", quoterm());
@@ -54,7 +56,9 @@ impl CmdList {
                         if let Some(command) = command {
                             let (cmd, _) = pop_cmd(&command);
                             if let Some(cmd) = self.commands.get(cmd.as_str()) {
-                                add_alias(&db, &alias, &cmd.auth, &command);
+                                let mut auth = cmd.auth.clone();
+                                auth.set(Permissions::ReadOnly, true);
+                                add_alias(&db, &alias, &auth, &command);
                             }
                         }
                     }
@@ -128,6 +132,46 @@ pub struct Bucket {
 //                                          Bot Commands                                          //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+fn mod_alias() -> Cmd {
+    Cmd {
+        func: |t_state, _, args| {
+            if let Some(args) = args {
+                let t_state = t_state.lock().unwrap();
+                if let Some(db) = &t_state.db {
+                    let (alias, args) = pop_cmd(&args);
+                    if let Some(args) = args {
+                        if let Some((auth, _)) = get_alias(&db, &alias) {
+                            let mut auth = auth;
+                            let mut attr_val = true;
+                            let mut attr;
+                            for ch in args.chars() {
+                                match ch {
+                                    '+' => { attr_val = true;  continue; },
+                                    '-' => { attr_val = false; continue; },
+                                    'r' => attr = Permissions::ReadOnly,
+                                    'o' => attr = Permissions::Owner,
+                                    'b' => attr = Permissions::Streamer,
+                                    'm' => attr = Permissions::Mod,
+                                    's' => attr = Permissions::Sub,
+                                    'v' => attr = Permissions::Viewer,
+                                    _ => continue,
+                                }
+                                auth.set(attr, attr_val);
+                            }
+                            let auth: u8 = auth.bits();
+                            db.execute("UPDATE alias SET auth=(?1) WHERE alias=?2", &[&auth, &alias])
+                                .unwrap();
+                        }
+                    }
+                }
+            }
+            None
+        },
+        bucket: None,
+        auth: Permissions::Streamer | Permissions::Mod,
+    }
+}
+
 fn say() -> Cmd {
     Cmd {
         func: |_, _, args| if let Some(args) = args {
@@ -136,7 +180,7 @@ fn say() -> Cmd {
             None
         },
         bucket: None,
-        auth: Permissions::Owner | Permissions::Mod,
+        auth: Permissions::Streamer | Permissions::Mod,
     }
 }
 
@@ -633,7 +677,7 @@ fn add_alias(db: &Connection, alias: &str, auth: &Permissions, cmd: &str) {
 
 fn get_alias(db: &Connection, alias: &str) -> Option<(Permissions, String)> {
     if let Ok((auth, cmd)) = db.query_row("SELECT * FROM alias WHERE alias=?1", &[&alias], |row| {
-        let auth: u8 = row.get(2);
+        let auth: u8 = row.get(1);
         let cmd: String = row.get(3);
         (auth, cmd)
     }) {
