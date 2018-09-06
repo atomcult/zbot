@@ -1328,7 +1328,7 @@ dependencies = [
 
 [[package]]
 name = "zbot"
-version = "0.2.0"
+version = "0.2.3"
 dependencies = [
  "bitflags 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
