@@ -29,6 +29,7 @@ impl CmdList {
         commands.insert("thicc", thicc());
         commands.insert("tiny", tinytext());
         commands.insert("smol", smallcaps());
+        commands.insert("numberwang", numberwang());
         commands.insert("8ball", eightball());
         commands.insert("flipcoin", coinflip());
         commands.insert("tcount", tcount());
@@ -460,6 +461,32 @@ fn smallcaps() -> Cmd {
             }
             Some(vec![response])
         } else {
+            None
+        },
+        bucket: None,
+        auth: Permissions::Viewer,
+    }
+}
+
+fn numberwang() -> Cmd {
+    Cmd {
+        func: |_, _, arg| {
+            if let Some(arg) = arg {
+                if arg.parse::<f32>().is_ok() {
+                    let mut rng = thread_rng();
+                    let answers = vec![
+                        "That's Numberwang!",
+                        "Yes, that is a number.",
+                        "Yes, that is a number.",
+                        "Yes, that is a number.",
+                        "Yes, that is a number.",
+                        "Yes, that is a number.",
+                        "Yes, that is a number.",
+                        "Yes, that is a number.",
+                    ];
+                    return Some(vec![String::from(answers[rng.gen_range(0, answers.len())])])
+                }
+            }
             None
         },
         bucket: None,
