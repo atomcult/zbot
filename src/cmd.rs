@@ -715,7 +715,7 @@ fn quoterm() -> Cmd {
             None
         },
         bucket: None,
-        auth: Permissions::Mod,
+        auth: Permissions::Streamer | Permissions::Mod,
     }
 }
 
