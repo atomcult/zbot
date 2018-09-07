@@ -21,6 +21,7 @@ impl CmdList {
 
         commands.insert("aliasmod", mod_alias());
 
+        commands.insert("null", null());
         commands.insert("quote", quote());
         commands.insert("quoteadd", quoteadd());
         commands.insert("quoterm", quoterm());
@@ -212,6 +213,14 @@ fn mod_alias() -> Cmd {
         },
         bucket: None,
         auth: Permissions::Streamer | Permissions::Mod,
+    }
+}
+
+fn null() -> Cmd {
+    Cmd {
+        func: |_, _, _| None,
+        bucket: None,
+        auth: Permissions::Streamer,
     }
 }
 
