@@ -64,30 +64,32 @@ impl CmdList {
                                     None => return None,
                                 };
                             }
-                            println!("auth_mod: {}", auth_mod);
-                            println!("command: {}", command);
                             let (cmd, _) = pop_cmd(&command);
                             if let Some(cmd) = self.commands.get(cmd.as_str()) {
-                                let mut auth = cmd.auth.clone();
-                                auth.set(Permissions::ReadOnly, true);
-                                let mut attr_val = true;
-                                let mut attr;
-                                for ch in auth_mod.chars() {
-                                    match ch {
-                                        '+' => { attr_val = true;  continue; },
-                                        '-' => { attr_val = false; continue; },
-                                        'r' => attr = Permissions::ReadOnly,
-                                        'o' => attr = Permissions::Owner,
-                                        'b' => attr = Permissions::Streamer,
-                                        'm' => attr = Permissions::Mod,
-                                        's' => attr = Permissions::Sub,
-                                        'v' => attr = Permissions::Viewer,
-                                        _ => continue,
+                                // Make sure that the user who's aliasing has permission to use the
+                                // command being aliased
+                                if context.auth.intersects(cmd.auth) {
+                                    let mut auth = cmd.auth.clone();
+                                    auth.set(Permissions::ReadOnly, true);
+                                    let mut attr_val = true;
+                                    let mut attr;
+                                    for ch in auth_mod.chars() {
+                                        match ch {
+                                            '+' => { attr_val = true;  continue; },
+                                            '-' => { attr_val = false; continue; },
+                                            'r' => attr = Permissions::ReadOnly,
+                                            'o' => attr = Permissions::Owner,
+                                            'b' => attr = Permissions::Streamer,
+                                            'm' => attr = Permissions::Mod,
+                                            's' => attr = Permissions::Sub,
+                                            'v' => attr = Permissions::Viewer,
+                                            _ => continue,
+                                        }
+                                        auth.set(attr, attr_val);
                                     }
-                                    auth.set(attr, attr_val);
+                                    rm_alias(&db, &alias);
+                                    add_alias(&db, &alias, &auth, &command);
                                 }
-                                rm_alias(&db, &alias);
-                                add_alias(&db, &alias, &auth, &command);
                             }
                         } else {
                             rm_alias(&db, &alias)
