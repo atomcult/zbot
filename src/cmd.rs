@@ -476,6 +476,8 @@ fn numberwang() -> Cmd {
                     let mut rng = thread_rng();
                     let answers = vec![
                         "That's Numberwang!",
+                        "Das ist Nümberwang!",
+                        "Mmm... Yumberwang!",
                         "Yes, that is a number.",
                         "Yes, that is a number.",
                         "Yes, that is a number.",
@@ -483,6 +485,11 @@ fn numberwang() -> Cmd {
                         "Yes, that is a number.",
                         "Yes, that is a number.",
                         "Yes, that is a number.",
+                        "Yes, that is a number.",
+                        "Ja, das ist eine Nummer.",
+                        "Ja, das ist eine Nummer.",
+                        "Ja, das ist eine Nummer.",
+                        "Ja, das ist eine Nummer.",
                     ];
                     return Some(vec![String::from(answers[rng.gen_range(0, answers.len())])])
                 }
