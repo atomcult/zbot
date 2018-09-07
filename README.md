@@ -1,4 +1,8 @@
-# Permissions
+# **zbot v0.2.5**
+
+--------------------------------------------------------------------------------
+
+## Permissions
 - `r`: `ReadOnly`
 - `o`: `Owners`
 - `b`: `Broadcaster`
@@ -14,10 +18,11 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
 
 **Note**: `ReadOnly` determines whether or not an alias will accept arguments. It is set by default on all aliases for security reasons.
 
+--------------------------------------------------------------------------------
 
-# Commands
+## Commands
 
-## QuoteDB
+### QuoteDB
 - `!quote`: Prints the quote with the specified id, otherwise if no id is specified a random quote is printed.
     - **Permissions**: `Broadcaster`, `Mods`
     - **Usage**: `!quote [id]`
@@ -31,7 +36,7 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
     - **Usage**: `!quoterm [id]`
     - **Example**: `!quoterm 3`
 
-## RNG Commands
+### RNG Commands
 - `!8ball`: Ask the all knowing 8ball a question!
     - **Permissions**: `Viewers`
     - **Usage**: `!8ball [question]`
@@ -46,7 +51,7 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
     - **Example**: `!roll 2d20 + d7 - 4` rolls 2 20-sided die and a 7-sided die, then subtracts 4 from the result.
     - **Note**: You can use [AnyDice](https://anydice.com/) to check the resulting distribution.
 
-## Translation Commands
+### Translation Commands
 - `!thicc`: Converts text into the 'thicc' alphabet (latin alphabet only).
     - **Permissions**: `Viewers`
     - **Usage**: `!thicc <text>`
@@ -60,7 +65,7 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
     - **Usage**: `!smol <text>`
     - **Example**: `!smol Hello, world!`
 
-## Meme Commands
+### Meme Commands
 - `!numberwang`: Determine if a number is numberwang or not!
     - **Permissions**: `Viewers`
     - **Usage**: `!numberwang <N>`
@@ -69,7 +74,7 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
     - **Permissions**: `Viewers`
     - **Usage**: `!tcount`
 
-## Special Commands
+### Special Commands
 - `!alias`: Alias a command to another command. Only someone with the ability to use to aliased command can create an alias to that command.
     - **Permissions**: `Broadcaster`, `Mods`
     - **Usage**: `!alias <alias> [permissions...] <command> [args...]`
