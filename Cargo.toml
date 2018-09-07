@@ -1,6 +1,6 @@
 [package]
 name    = "zbot"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["zxv <zxv@tfwno.gf>"]
 build   = "build.rs"
 
