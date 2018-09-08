@@ -60,7 +60,7 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
     - **Permissions**: `Viewers`
     - **Usage**: `!tiny <text>`
     - **Example**: `!tiny Hello, world!`
-- `!tiny`: Convert text into its small caps equivalent (latin alphabet only).
+- `!smol`: Convert text into its small caps equivalent (latin alphabet only).
     - **Permissions**: `Viewers`
     - **Usage**: `!smol <text>`
     - **Example**: `!smol Hello, world!`
