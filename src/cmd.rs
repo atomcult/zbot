@@ -37,7 +37,7 @@ impl CmdList {
         commands.insert("version", version());
         commands.insert("shutdown", shutdown());
 
-        commands.insert("strawpoll", create_strawpoll());
+        commands.insert("strawpoll", strawpoll_cmd());
 
         Self { commands }
     }
@@ -261,7 +261,7 @@ fn count() -> Cmd {
     }
 }
 
-fn create_strawpoll() -> Cmd {
+fn strawpoll_cmd() -> Cmd {
     Cmd {
         func: |t_state, _, args| {
             if let Some(args) = args {
@@ -307,7 +307,7 @@ fn create_strawpoll() -> Cmd {
             None
         },
         bucket: None,
-        auth: Permissions::Owner,
+        auth: Permissions::Streamer | Permissions::Mod,
     }
 }
 
