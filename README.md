@@ -36,6 +36,15 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
     - **Usage**: `!quoterm [id]`
     - **Example**: `!quoterm 3`
 
+### Utility Commands
+- `!strawpoll`: Create a new [strawpoll](https://strawpoll.me/) or query its results.
+    - **Permissions**: `Broadcaster`, `Mods`
+    - **Usage**: `!strawpoll [<title> | <Option 1> | <Option 2> | ... | [Option N]]`
+    - **Example**: `!strawpoll Is Zed human? | Yes | Yes | Yes`
+    - **Example**: `!stawpoll`
+    - **Note**: Strawpoll requires a minimum of 2 options and will accept a maximum of 30 options.
+    - **Note**: When the `!strawpoll` command is invoked without arguments the results for the last poll will be printed to chat.
+
 ### RNG Commands
 - `!8ball`: Ask the all knowing 8ball a question!
     - **Permissions**: `Viewers`
