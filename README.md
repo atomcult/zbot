@@ -33,7 +33,7 @@ Here, `+v` allows all viewers to use the command (potentially dangerous!), and `
     - **Example**: `!quoteadd "Hello, world!" - ZedExV, 2018`
 - `!quoterm`: Removes a quote by id from the QuoteDB
     - **Permissions**: `Broadcaster`, `Mods`
-    - **Usage**: `!quoterm [id]`
+    - **Usage**: `!quoterm <id>`
     - **Example**: `!quoterm 3`
 
 ### Utility Commands
