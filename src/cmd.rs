@@ -1,5 +1,3 @@
-
-
 use auth::Permissions;
 use rand::distributions::Uniform;
 use rand::prelude::*;
@@ -10,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use twitch::Context;
+use strawpoll;
 
 pub struct CmdList {
     commands: HashMap<&'static str, Cmd>,
@@ -37,6 +36,8 @@ impl CmdList {
         commands.insert("count", count());
         commands.insert("version", version());
         commands.insert("shutdown", shutdown());
+
+        commands.insert("strawpoll", create_strawpoll());
 
         Self { commands }
     }
@@ -253,6 +254,34 @@ fn count() -> Cmd {
                 Err(_) => None,
             }
         } else {
+            None
+        },
+        bucket: None,
+        auth: Permissions::Owner,
+    }
+}
+
+fn create_strawpoll() -> Cmd {
+    Cmd {
+        func: |_, _, args| {
+            if let Some(args) = args {
+                let mut title: &str = "";
+                let mut options: Vec<&str> = Vec::new();
+                let splits = args.split('|');
+
+                let mut is_title = true;
+                for split in splits {
+                    if is_title {
+                        title = split.trim();
+                        is_title = false;
+                    } else {
+                        options.push(split.trim())
+                    }
+                }
+                if let Ok(poll) = strawpoll::create_poll(title, &options) {
+                    return Some(vec![format!("https://strawpoll.me/{}", poll.id)])
+                }
+            }
             None
         },
         bucket: None,

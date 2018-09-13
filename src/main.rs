@@ -2,12 +2,14 @@ extern crate irc;
 extern crate toml;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 #[macro_use]
 extern crate bitflags;
 extern crate rb;
 extern crate rusqlite;
 extern crate rand;
 extern crate regex;
+extern crate curl;
 extern crate dirs;
 
 mod auth;
@@ -15,6 +17,7 @@ mod config;
 mod cmd;
 mod state;
 mod twitch;
+mod strawpoll;
 
 use std::path::PathBuf;
 use std::sync::Arc;
