@@ -263,7 +263,7 @@ fn count() -> Cmd {
 
 fn create_strawpoll() -> Cmd {
     Cmd {
-        func: |_, _, args| {
+        func: |t_state, _, args| {
             if let Some(args) = args {
                 let mut title: &str = "";
                 let mut options: Vec<&str> = Vec::new();
@@ -279,7 +279,29 @@ fn create_strawpoll() -> Cmd {
                     }
                 }
                 if let Ok(poll) = strawpoll::create_poll(title, &options) {
+                    if let Ok(mut t_state) = t_state.lock() {
+                        t_state.poll_id = Some(poll.id);
+                    }
                     return Some(vec![format!("https://strawpoll.me/{}", poll.id)])
+                }
+            } else {
+                if let Ok(t_state) = t_state.lock() {
+                    if let Some(poll_id) = t_state.poll_id {
+                        if let Ok(poll) = strawpoll::get_poll(poll_id) {
+                            if let Some(votes) = poll.votes {
+                                let mut s = format!("\"{}\" (https://strawpoll.me/{}): ", poll.title, poll.id);
+                                for i in 0..poll.options.len() {
+                                    s.push_str(&format!("\"{}\": {} votes", poll.options[i], votes[i]));
+                                    if i != poll.options.len()-1 {
+                                        s.push_str(", ");
+                                    }
+                                }
+                                return Some(vec![s])
+                            } else {
+                                return Some(vec![format!("https://strawpoll.me/{}", poll_id)])
+                            }
+                        }
+                    }
                 }
             }
             None
