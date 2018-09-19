@@ -749,6 +749,13 @@ fn quoteadd() -> Cmd {
                 if let Some(db) = &t_state.db {
                     db.execute("INSERT INTO quote (quote) values (?1)", &[&args])
                         .unwrap();
+                    let msg = db.query_row("SELECT * FROM quote ORDER BY id DESC LIMIT 1;", &[], |row| {
+                        let id: u32 = row.get(0);
+                        format!("Quote #{} added.", id)
+                    });
+                    if let Ok(msg) = msg {
+                        return Some(vec![msg]);
+                    }
                 }
             }
             None
